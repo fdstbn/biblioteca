@@ -202,7 +202,24 @@ h1.title em{font-style:italic;font-weight:500;color:var(--burgundy);}
   color:var(--ink);
 }
 .rcard .rauthor{
-  font-size:13.5px;color:var(--burgundy);font-style:italic;margin-bottom:10px;
+  margin-bottom:10px;
+}
+.rcard .rauthor .aname{
+  font-family:'Fraunces',serif;
+  font-weight:600;
+  font-size:14px;
+  font-style:italic;
+  color:var(--burgundy);
+  display:block;
+}
+.rcard .reditorial{
+  font-family:'Space Mono',monospace;
+  font-size:10.5px;
+  color:var(--ink-soft);
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  display:block;
+  margin-top:2px;
 }
 .rcard .rmeta{
   margin-top:auto;
@@ -495,6 +512,21 @@ footer{
           <option value="">Todos</option>
           <option value="leido">Leídos</option>
           <option value="noleido">No leídos</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="qOrden">Ordenar por</label>
+        <select id="qOrden">
+          <option value="relevancia">Relevancia</option>
+          <option value="titulo-asc">Título (A–Z)</option>
+          <option value="titulo-desc">Título (Z–A)</option>
+          <option value="autor-asc">Autor (A–Z)</option>
+          <option value="autor-desc">Autor (Z–A)</option>
+          <option value="editorial-asc">Editorial (A–Z)</option>
+          <option value="editorial-desc">Editorial (Z–A)</option>
+          <option value="anio-desc">Año (más reciente)</option>
+          <option value="anio-asc">Año (más antiguo)</option>
+          <option value="valoracion-desc">Valoración (mayor)</option>
         </select>
       </div>
     </div>
@@ -795,6 +827,7 @@ const qAutor = document.getElementById('qAutor');
 const qTema = document.getElementById('qTema');
 const qPais = document.getElementById('qPais');
 const qEstado = document.getElementById('qEstado');
+const qOrden = document.getElementById('qOrden');
 const resultsEl = document.getElementById('results');
 const resultCountEl = document.getElementById('resultCount');
 const loadMoreBtn = document.getElementById('loadMore');
@@ -852,13 +885,35 @@ function cardHTML(r){
     <div class="${cls}" data-tab="${r._new ? '＋' : tab}" data-rowidx="${r._rowIdx}">
       <span class="edit-hint">editar ✎</span>
       <div class="rtitle">${r.t||'(sin título)'}</div>
-      <div class="rauthor">${r.a||'Autor desconocido'}${r.e?' · '+r.e:''}</div>
+      <div class="rauthor">
+        <span class="aname">${r.a||'Autor desconocido'}</span>
+        ${r.e ? `<span class="reditorial">${r.e}</span>` : ''}
+      </div>
       <div class="rmeta">${chips.join('')}</div>
     </div>`;
 }
 
+function sortRecords(list){
+  const mode = qOrden.value;
+  if(mode === 'relevancia') return list;
+  const collator = new Intl.Collator('es', {sensitivity:'base'});
+  const [field, dir] = mode.split('-');
+  const sign = dir === 'desc' ? -1 : 1;
+  const arr = list.slice();
+  arr.sort((a,b) => {
+    let av, bv;
+    if(field === 'titulo'){ av = a.t||''; bv = b.t||''; return sign * collator.compare(av,bv); }
+    if(field === 'autor'){ av = a.a||''; bv = b.a||''; return sign * collator.compare(av,bv); }
+    if(field === 'editorial'){ av = a.e||''; bv = b.e||''; return sign * collator.compare(av,bv); }
+    if(field === 'anio'){ av = parseInt(a.c,10); bv = parseInt(b.c,10); av = isNaN(av)?-Infinity:av; bv = isNaN(bv)?-Infinity:bv; return sign * (av-bv); }
+    if(field === 'valoracion'){ av = a.r||0; bv = b.r||0; return sign * (av-bv); }
+    return 0;
+  });
+  return arr;
+}
+
 function renderResults(){
-  const filtered = RECORDS.filter(matches);
+  const filtered = sortRecords(RECORDS.filter(matches));
   resultCountEl.textContent = fmt(filtered.length);
   const slice = filtered.slice(0, shown);
   resultsEl.innerHTML = slice.length
@@ -879,10 +934,10 @@ function renderAll(){
 }
 
 [qTitulo, qAutor].forEach(el => el.addEventListener('input', () => { shown = PAGE; renderResults(); }));
-[qTema, qPais, qEstado].forEach(el => el.addEventListener('change', () => { shown = PAGE; renderResults(); }));
+[qTema, qPais, qEstado, qOrden].forEach(el => el.addEventListener('change', () => { shown = PAGE; renderResults(); }));
 loadMoreBtn.addEventListener('click', () => { shown += PAGE; renderResults(); });
 document.getElementById('clearBtn').addEventListener('click', () => {
-  qTitulo.value=''; qAutor.value=''; qTema.value=''; qPais.value=''; qEstado.value='';
+  qTitulo.value=''; qAutor.value=''; qTema.value=''; qPais.value=''; qEstado.value=''; qOrden.value='relevancia';
   shown = PAGE; renderResults();
 });
 
