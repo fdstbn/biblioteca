@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Por leer · BBL_PL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500;1,9..144,600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --paper:#F4EFE3;
+    --paper-raised:#FAF7EF;
+    --ink:#2B2319;
+    --ink-soft:#6B6153;
+    --rule:#DBD0B8;
+    --burgundy:#7C2E27;
+    --forest:#4C5A3E;
+    --forest-soft:#EDF0E3;
+    --gold:#B8860B;
+    --shadow: 0 1px 2px rgba(43,35,25,0.06), 0 8px 20px -12px rgba(43,35,25,0.25);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(43,35,25,0.035) 1px, transparent 0);
+    background-size: 22px 22px;
+    color:var(--ink);
+    font-family:'Source Serif 4', serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--forest-soft); }
+
+  a{color:inherit;}
+  .mono{ font-family:'Space Mono', monospace; letter-spacing:0.02em; }
+  .smallcaps{ font-variant:small-caps; letter-spacing:0.06em; }
+
+  header.top{
+    max-width:1180px; margin:0 auto; padding:56px 28px 20px;
+    display:flex; align-items:flex-end; justify-content:space-between; gap:24px;
+    flex-wrap:wrap;
+    border-bottom:1px solid var(--rule);
+  }
+  .title-block h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size:clamp(2.1rem, 4vw, 3rem);
+    margin:0 0 6px; letter-spacing:-0.01em;
+  }
+  .title-block .sub{
+    color:var(--ink-soft); font-family:'Space Mono', monospace; font-size:0.78rem;
+    text-transform:uppercase; letter-spacing:0.1em;
+  }
+  .top-actions{ display:flex; gap:10px; padding-bottom:6px; flex-wrap:wrap; }
+
+  button{ font-family:inherit; cursor:pointer; border:none; }
+  .btn{
+    font-family:'Space Mono', monospace; font-size:0.78rem; text-transform:uppercase;
+    letter-spacing:0.06em; padding:11px 18px; border-radius:3px; border:1px solid var(--ink);
+    background:transparent; color:var(--ink); transition:all .15s ease;
+  }
+  .btn:hover{ background:var(--ink); color:var(--paper); }
+  .btn.primary{ background:var(--forest); color:#fff; border-color:var(--forest); }
+  .btn.primary:hover{ background:#3d4831; border-color:#3d4831; }
+  .btn.ghost{ border-color:var(--rule); color:var(--ink-soft); }
+  .btn.ghost:hover{ background:var(--ink-soft); border-color:var(--ink-soft); color:#fff; }
+  .btn.danger{ border-color:var(--burgundy); color:var(--burgundy); }
+  .btn.danger:hover{ background:var(--burgundy); border-color:var(--burgundy); color:#fff; }
+
+  main{ max-width:1180px; margin:0 auto; padding:34px 28px 90px; }
+
+  /* Stats strip */
+  .stats{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px;
+    background:var(--rule); border:1px solid var(--rule); margin-bottom:34px; border-radius:4px; overflow:hidden;
+  }
+  .stat{ background:var(--paper-raised); padding:18px 20px; }
+  .stat .num{ font-family:'Fraunces', serif; font-weight:600; font-size:1.9rem; line-height:1; }
+  .stat .lbl{ font-family:'Space Mono', monospace; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft); margin-top:6px; }
+
+  /* Breakdown bars */
+  .breakdowns{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:40px; }
+  @media (max-width:720px){ .breakdowns{ grid-template-columns:1fr; } }
+  .breakdown-card{ background:var(--paper-raised); border:1px solid var(--rule); border-radius:4px; padding:18px 20px; }
+  .breakdown-card h3{
+    font-family:'Space Mono', monospace; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em;
+    color:var(--ink-soft); margin:0 0 14px; font-weight:700;
+  }
+  .bar-row{ display:flex; align-items:center; gap:10px; margin-bottom:9px; font-size:0.85rem; }
+  .bar-row .name{ width:38%; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink); }
+  .bar-track{ flex:1; height:8px; background:var(--rule); border-radius:2px; overflow:hidden; }
+  .bar-fill{ height:100%; background:var(--forest); border-radius:2px; }
+  .bar-row .count{ font-family:'Space Mono', monospace; font-size:0.75rem; color:var(--ink-soft); width:20px; text-align:right; }
+  .empty-note{ color:var(--ink-soft); font-size:0.85rem; font-style:italic; }
+
+  /* Toolbar */
+  .toolbar{
+    display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:22px;
+  }
+  .search-wrap{ position:relative; flex:1; min-width:220px; }
+  input[type="text"], select, textarea{
+    font-family:'Source Serif 4', serif; font-size:0.95rem; color:var(--ink);
+    background:var(--paper-raised); border:1px solid var(--rule); border-radius:3px;
+    padding:11px 14px; width:100%;
+  }
+  input[type="text"]:focus, select:focus, textarea:focus{ outline:none; border-color:var(--forest); }
+  select{ font-family:'Space Mono', monospace; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; width:auto; }
+  .toolbar-selects{ display:flex; gap:10px; flex-wrap:wrap; }
+  .count-line{ font-family:'Space Mono', monospace; font-size:0.75rem; color:var(--ink-soft); margin-bottom:18px; text-transform:uppercase; letter-spacing:0.04em; }
+
+  /* Grid & cards */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(268px,1fr)); gap:18px; }
+  .card{
+    position:relative; background:var(--paper-raised); border:1px solid var(--rule); border-radius:4px;
+    padding:20px 20px 18px; box-shadow:var(--shadow); cursor:pointer; transition:transform .12s ease, box-shadow .12s ease;
+    display:flex; flex-direction:column; gap:10px; min-height:170px;
+  }
+  .card:hover{ transform:translateY(-2px); box-shadow:0 4px 6px rgba(43,35,25,0.08), 0 14px 26px -14px rgba(43,35,25,0.35); }
+
+  .ribbon{
+    position:absolute; top:-2px; right:18px; background:var(--burgundy); color:#fff;
+    font-family:'Fraunces', serif; font-weight:600; font-size:0.78rem;
+    padding:5px 10px 8px; border-radius:0 0 3px 3px;
+    box-shadow:0 3px 5px rgba(0,0,0,0.18);
+  }
+  .ribbon::after{
+    content:""; position:absolute; bottom:-6px; right:0; border-style:solid;
+    border-width:0 9px 6px 0; border-color:transparent #4a1a15 transparent transparent;
+  }
+
+  .card h2{ font-family:'Fraunces', serif; font-weight:600; font-size:1.18rem; line-height:1.25; margin:6px 0 0; padding-right:36px; }
+  .card .autor{ font-family:'Fraunces', serif; font-style:italic; color:var(--burgundy); font-size:0.95rem; }
+  .card .editorial{ font-family:'Space Mono', monospace; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); }
+  .card .lista-tag{ font-family:'Space Mono', monospace; font-size:0.68rem; color:var(--forest); background:var(--forest-soft); padding:3px 8px; border-radius:20px; display:inline-block; width:fit-content; }
+  .card .tematica{ font-size:0.8rem; color:var(--ink-soft); }
+  .card .referencia{ font-size:0.83rem; color:var(--ink); font-style:italic; border-left:2px solid var(--rule); padding-left:10px; margin-top:2px; }
+  .card .status-row{ display:flex; gap:6px; flex-wrap:wrap; margin-top:auto; padding-top:8px; }
+  .status-badge{ font-family:'Space Mono', monospace; font-size:0.64rem; text-transform:uppercase; letter-spacing:0.05em; padding:3px 8px; border-radius:20px; border:1px solid var(--rule); color:var(--ink-soft); }
+  .status-badge.on.leido{ background:var(--forest); border-color:var(--forest); color:#fff; }
+  .status-badge.on.tengo{ background:var(--gold); border-color:var(--gold); color:#fff; }
+
+  .toggle-group{ display:flex; gap:8px; }
+  .toggle-btn{
+    flex:1; font-family:'Space Mono', monospace; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.04em;
+    padding:9px 10px; border-radius:3px; border:1px solid var(--rule); background:var(--paper-raised); color:var(--ink-soft);
+    cursor:pointer; transition:all .12s ease;
+  }
+  .toggle-btn.active{ background:var(--forest); border-color:var(--forest); color:#fff; }
+
+  .star-picker{ display:flex; gap:4px; }
+  .star-btn{ background:transparent; border:none; font-size:1.6rem; line-height:1; color:var(--rule); cursor:pointer; padding:2px; transition:color .1s ease, transform .1s ease; }
+  .star-btn:hover{ transform:scale(1.15); }
+  .star-btn.filled{ color:var(--gold); }
+
+  .card .fav-stars{ font-size:0.85rem; color:var(--gold); letter-spacing:1px; }
+
+  .empty-state{
+    text-align:center; padding:70px 20px; color:var(--ink-soft); border:1px dashed var(--rule); border-radius:6px; background:var(--paper-raised);
+  }
+  .empty-state h3{ font-family:'Fraunces', serif; font-size:1.4rem; color:var(--ink); margin-bottom:8px; }
+  .empty-state p{ max-width:420px; margin:0 auto 20px; }
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(43,35,25,0.45); display:none; align-items:center; justify-content:center;
+    padding:24px; z-index:50;
+  }
+  .overlay.open{ display:flex; }
+  .modal{
+    background:var(--paper); border-radius:6px; max-width:560px; width:100%; max-height:88vh; overflow-y:auto;
+    padding:30px 32px; box-shadow:0 20px 50px rgba(0,0,0,0.3); border:1px solid var(--rule);
+  }
+  .modal h2{ font-family:'Fraunces', serif; font-size:1.5rem; margin:0 0 20px; }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-family:'Space Mono', monospace; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-soft); margin-bottom:6px; }
+  .field-row{ display:flex; gap:12px; }
+  .field-row .field{ flex:1; }
+  .modal-actions{ display:flex; justify-content:space-between; align-items:center; margin-top:24px; padding-top:18px; border-top:1px solid var(--rule); }
+  .modal-actions .right{ display:flex; gap:10px; }
+
+  .fab{
+    position:fixed; bottom:28px; right:28px; z-index:40;
+    display:flex; align-items:center; gap:8px;
+    padding:14px 20px; border-radius:30px; background:var(--forest); color:#fff;
+    font-family:'Space Mono', monospace; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;
+    box-shadow:0 8px 24px -6px rgba(76,90,62,0.55);
+  }
+  .fab:hover{ background:#3d4831; }
+
+  footer{ text-align:center; padding:30px; color:var(--ink-soft); font-family:'Space Mono', monospace; font-size:0.7rem; letter-spacing:0.05em; }
+
+  @media (max-width:520px){
+    header.top{ padding:36px 18px 16px; }
+    main{ padding:24px 18px 90px; }
+    .modal{ padding:22px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="title-block">
+    <h1>Por leer</h1>
+    <div class="sub">Pila de lectura · BBL_PL.xlsx</div>
+  </div>
+  <div class="top-actions">
+    <button class="btn ghost" id="btnDownload">↓ Descargar Excel</button>
+  </div>
+</header>
+
+<main>
+
+  <div class="stats" id="statsStrip"></div>
+
+  <div class="breakdowns">
+    <div class="breakdown-card">
+      <h3>Por lista de origen</h3>
+      <div id="breakdownLista"></div>
+    </div>
+    <div class="breakdown-card">
+      <h3>Por temática</h3>
+      <div id="breakdownTematica"></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="Buscar por título, autor, editorial, temática, lista o estado (leído, tengo…)…">
+    </div>
+    <div class="toolbar-selects">
+      <select id="sortSelect">
+        <option value="favorito">Favoritos primero</option>
+        <option value="orden">Orden (posición en lista)</option>
+        <option value="titulo">Título A–Z</option>
+        <option value="autor">Autor A–Z</option>
+        <option value="editorial">Editorial A–Z</option>
+        <option value="reciente">Añadidos recientemente</option>
+      </select>
+      <select id="favoritoFilter">
+        <option value="">Favoritos · todos</option>
+        <option value="1">★ o más</option>
+        <option value="2">★★ o más</option>
+        <option value="3">★★★</option>
+      </select>
+      <select id="listaFilter">
+        <option value="">Todas las listas</option>
+      </select>
+      <select id="leidoFilter">
+        <option value="">Leído · todos</option>
+        <option value="si">Leído</option>
+        <option value="no">No leído</option>
+      </select>
+      <select id="tengoFilter">
+        <option value="">Tengo · todos</option>
+        <option value="si">Tengo</option>
+        <option value="no">Por comprar</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="count-line" id="countLine"></div>
+
+  <div class="grid" id="grid"></div>
+
+</main>
+
+<button class="fab" id="btnAdd">+ Añadir libro</button>
+
+<footer>BBL_PL · pila de lectura personal · exporta y guarda tus cambios en Excel</footer>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">Añadir libro</h2>
+    <form id="bookForm">
+      <div class="field">
+        <label for="f_titulo">Título</label>
+        <input type="text" id="f_titulo" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="f_autor">Autor</label>
+          <input type="text" id="f_autor">
+        </div>
+        <div class="field">
+          <label for="f_editorial">Editorial</label>
+          <input type="text" id="f_editorial">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="f_lista">Lista de origen (opcional)</label>
+          <input type="text" id="f_lista" placeholder="p. ej. 100 mejores del s. XXI — NYT">
+        </div>
+        <div class="field" style="max-width:120px;">
+          <label for="f_orden">Posición nº</label>
+          <input type="text" id="f_orden" inputmode="numeric" placeholder="12">
+        </div>
+      </div>
+      <div class="field">
+        <label for="f_tematica">Temática / género</label>
+        <input type="text" id="f_tematica">
+      </div>
+      <div class="field">
+        <label for="f_referencia">Nota / referencia breve</label>
+        <textarea id="f_referencia" rows="3" placeholder="Por qué está en la lista, quién lo recomendó, de dónde salió…"></textarea>
+      </div>
+      <div class="field">
+        <label>Favorito</label>
+        <div class="star-picker" id="starPicker">
+          <button type="button" class="star-btn" data-value="1">★</button>
+          <button type="button" class="star-btn" data-value="2">★</button>
+          <button type="button" class="star-btn" data-value="3">★</button>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Lectura</label>
+          <div class="toggle-group" id="toggleLeido">
+            <button type="button" class="toggle-btn" data-value="no">No leído</button>
+            <button type="button" class="toggle-btn" data-value="si">Leído</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Posesión</label>
+          <div class="toggle-group" id="toggleTengo">
+            <button type="button" class="toggle-btn" data-value="no">Por comprar</button>
+            <button type="button" class="toggle-btn" data-value="si">Tengo</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn danger" id="btnDelete" style="display:none;">Eliminar</button>
+        <div class="right">
+          <button type="button" class="btn ghost" id="btnCancel">Cancelar</button>
+          <button type="submit" class="btn primary">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let books = [
+  { id:1, titulo:"Digitalización democrática. Soberanía digital para las personas", autor:"Simona Levi", editorial:"Rayo Verde", lista:"EOM · Soberanía digital", orden:"", tematica:"Ensayo · tecnología y democracia", referencia:"Manifiesto de X.net sobre soberanía digital y derechos ciudadanos frente a las grandes plataformas.", leido:false, tengo:false, favorito:0 },
+  { id:2, titulo:"Las redes son nuestras: una historia popular de internet y un mapa para volver a habitarla", autor:"Marta G. Franco", editorial:"Consonni", lista:"EOM · Soberanía digital", orden:"", tematica:"Ensayo · tecnología y democracia", referencia:"Historia colectiva de Internet en España, del underground de los 90 al activismo digital actual.", leido:false, tengo:false, favorito:0 },
+  { id:3, titulo:"Contra el futuro", autor:"Marta Peirano", editorial:"Debate", lista:"EOM · Soberanía digital", orden:"", tematica:"Ensayo · tecnología y democracia", referencia:"Ensayo sobre vigilancia, cambio climático y el imaginario tecnológico que nos vende un futuro inevitable.", leido:false, tengo:false, favorito:0 },
+  { id:4, titulo:"Contra la bazofia digital", autor:"Irene Lozano", editorial:"Península", lista:"EOM · Soberanía digital", orden:"", tematica:"Ensayo · tecnología y democracia", referencia:"Crítica al algoritmo y a la degradación del debate público en las redes sociales.", leido:false, tengo:false, favorito:0 },
+  { id:5, titulo:"El sueño de la aldea Ding", autor:"Yan Lianke", editorial:"", lista:"China · Novela contemporánea", orden:"", tematica:"Novela china contemporánea", referencia:"Fábula sobre la epidemia de sida por venta de sangre en la China rural de los 90.", leido:false, tengo:false, favorito:0 },
+  { id:6, titulo:"Grandes pechos, amplias caderas", autor:"Mo Yan", editorial:"", lista:"China · Novela contemporánea", orden:"", tematica:"Novela china contemporánea", referencia:"Saga familiar que recorre el siglo XX chino a través de la matriarca de una familia campesina.", leido:false, tengo:false, favorito:0 },
+  { id:7, titulo:"Brothers", autor:"Yu Hua", editorial:"", lista:"China · Novela contemporánea", orden:"", tematica:"Novela china contemporánea", referencia:"Dos hermanastros atraviesan la Revolución Cultural y el capitalismo salvaje chino.", leido:false, tengo:false, favorito:0 },
+  { id:8, titulo:"¡Vivir!", autor:"Yu Hua", editorial:"", lista:"China · Novela contemporánea", orden:"", tematica:"Novela china contemporánea", referencia:"Un campesino narra las tragedias de su vida en la China del siglo XX, con humor y desgarro.", leido:false, tengo:false, favorito:0 },
+  { id:9, titulo:"La montaña del alma", autor:"Gao Xingjian", editorial:"", lista:"China · Novela contemporánea", orden:"", tematica:"Novela china contemporánea", referencia:"Viaje iniciático por la China rural; obra del primer Nobel chino de literatura.", leido:false, tengo:false, favorito:0 },
+  { id:10, titulo:"Historias del extrarradio", autor:"Xu Zechen", editorial:"", lista:"China · Novela contemporánea", orden:"", tematica:"Novela china contemporánea", referencia:"Retrato de los migrantes rurales que sobreviven en los márgenes de las grandes ciudades chinas.", leido:false, tengo:false, favorito:0 },
+  { id:11, titulo:"El problema de los tres cuerpos", autor:"Liu Cixin", editorial:"", lista:"Sci-Fi · Trilogía de los tres cuerpos", orden:"1", tematica:"Ciencia ficción china", referencia:"Primera parte de la trilogía; un físico se enfrenta a un contacto extraterrestre inminente.", leido:false, tengo:false, favorito:0 },
+  { id:12, titulo:"El bosque oscuro", autor:"Liu Cixin", editorial:"", lista:"Sci-Fi · Trilogía de los tres cuerpos", orden:"2", tematica:"Ciencia ficción china", referencia:"Segunda parte; la humanidad se prepara ante la invasión trisolariana bajo el dilema del bosque oscuro.", leido:false, tengo:false, favorito:0 },
+  { id:13, titulo:"El fin de la muerte", autor:"Liu Cixin", editorial:"", lista:"Sci-Fi · Trilogía de los tres cuerpos", orden:"3", tematica:"Ciencia ficción china", referencia:"Cierre de la trilogía; escalas cósmicas y el destino último de la humanidad.", leido:false, tengo:false, favorito:0 },
+  { id:14, titulo:"La redención del tiempo", autor:"Baoshu", editorial:"", lista:"Sci-Fi · Trilogía de los tres cuerpos", orden:"", tematica:"Ciencia ficción china", referencia:"Continuación no oficial de la trilogía de Liu Cixin", leido:false, tengo:false, favorito:0 },
+  { id:15, titulo:"Muerte de una heroína roja", autor:"Qiu Xiaolong", editorial:"", lista:"Sci-Fi · Serie inspector Chen (Cao)", orden:"1", tematica:"Novela policiaca china", referencia:"Primera novela de la serie; el inspector Chen investiga un crimen en el Shanghái post-Mao.", leido:false, tengo:false, favorito:0 },
+  { id:16, titulo:"Visado para Shanghai", autor:"Qiu Xiaolong", editorial:"", lista:"Sci-Fi · Serie inspector Chen (Cao)", orden:"2", tematica:"Novela policiaca china", referencia:"Segunda entrega de la serie del inspector Chen, con Shanghái como telón de fondo social.", leido:false, tengo:false, favorito:0 },
+  { id:17, titulo:"Cuando el rojo es negro", autor:"Qiu Xiaolong", editorial:"", lista:"Sci-Fi · Serie inspector Chen (Cao)", orden:"3", tematica:"Novela policiaca china", referencia:"Chen investiga el asesinato de una escritora disidente en la China de la apertura económica.", leido:false, tengo:false, favorito:0 },
+  { id:18, titulo:"El zoo de papel y otros relatos", autor:"Ken Liu", editorial:"", lista:"", orden:"", tematica:"Ciencia ficción · relatos", referencia:"Antología de relatos de ciencia ficción y fantasía; el cuento titular ganó el Hugo y el Nebula.", leido:false, tengo:false, favorito:0 },
+  { id:19, titulo:"La gracia de los reyes", autor:"Ken Liu", editorial:"", lista:"Sci-Fi · La dinastía del Diente de León", orden:"1", tematica:"Fantasía épica (silkpunk)", referencia:"The Grace of Kings, 2015", leido:false, tengo:false, favorito:0 },
+  { id:20, titulo:"El muro de las tormentas", autor:"Ken Liu", editorial:"", lista:"Sci-Fi · La dinastía del Diente de León", orden:"2", tematica:"Fantasía épica (silkpunk)", referencia:"The Wall of Storms, 2016", leido:false, tengo:false, favorito:0 },
+  { id:21, titulo:"El trono velado", autor:"Ken Liu", editorial:"", lista:"Sci-Fi · La dinastía del Diente de León", orden:"3", tematica:"Fantasía épica (silkpunk)", referencia:"The Veiled Throne, 2021", leido:false, tengo:false, favorito:0 },
+  { id:22, titulo:"Huesos que hablan", autor:"Ken Liu", editorial:"", lista:"Sci-Fi · La dinastía del Diente de León", orden:"4", tematica:"Fantasía épica (silkpunk)", referencia:"Speaking Bones, 2022", leido:false, tengo:false, favorito:0 },
+  { id:23, titulo:"Libro de las mutaciones (I Ching)", autor:"Tradicional", editorial:"", lista:"China · Clásicos", orden:"", tematica:"Clásico chino", referencia:"Clásico chino de adivinación y filosofía basado en 64 hexagramas.", leido:false, tengo:false, favorito:0 },
+  { id:24, titulo:"Viaje al oeste", autor:"Wu Cheng'en", editorial:"", lista:"China · Clásicos", orden:"", tematica:"Clásico chino", referencia:"Peregrinación del monje Xuanzang a la India, con el Rey Mono como compañero.", leido:false, tengo:false, favorito:0 },
+  { id:25, titulo:"El romance de los tres reinos", autor:"Luo Guanzhong", editorial:"", lista:"China · Clásicos", orden:"", tematica:"Clásico chino", referencia:"Épica histórica sobre la fragmentación de China tras la caída de la dinastía Han.", leido:false, tengo:false, favorito:0 },
+  { id:26, titulo:"Sueño en el Pabellón Rojo", autor:"Cao Xueqin", editorial:"", lista:"China · Clásicos", orden:"", tematica:"Clásico chino", referencia:"Cumbre de la novela clásica china; declive de una gran familia aristocrática.", leido:false, tengo:false, favorito:0 },
+  { id:27, titulo:"Analectas", autor:"Confucio", editorial:"", lista:"China · Clásicos", orden:"", tematica:"Clásico chino · filosofía", referencia:"Enseñanzas y diálogos de Confucio sobre ética, gobierno y virtud.", leido:false, tengo:false, favorito:0 },
+  { id:28, titulo:"La ciudad antes del mar", autor:"Claudio Feijoo González", editorial:"", lista:"China · Historia", orden:"", tematica:"Historia de China", referencia:"Ensayo/narrativa sobre la historia urbana china y su apertura al mar.", leido:false, tengo:false, favorito:0 },
+  { id:29, titulo:"Breve historia de la civilización china", autor:"Miranda Brown y Conrad Schirokauer", editorial:"", lista:"China · Historia", orden:"", tematica:"Historia de China", referencia:"Resumen completo de la historia china: sociedad, arte, religión y política desde la antigüedad hasta la modernidad", leido:false, tengo:false, favorito:0 },
+  { id:30, titulo:"El mundo chino", autor:"Jacques Gernet", editorial:"", lista:"China · Historia", orden:"", tematica:"Historia de China", referencia:"Síntesis de la evolución de China situada en su contexto mundial", leido:false, tengo:false, favorito:0 },
+  { id:31, titulo:"Historia mínima de China", autor:"Pedro Ceinos Arcones", editorial:"", lista:"China · Historia", orden:"", tematica:"Historia de China", referencia:"Síntesis accesible de la historia china desde sus orígenes hasta la actualidad.", leido:false, tengo:false, favorito:0 },
+  { id:32, titulo:"La Gran Muralla: China contra el mundo, 1000 a.C.-2000 d.C.", autor:"Julia Lovell", editorial:"", lista:"China · Historia", orden:"", tematica:"Historia de China", referencia:"Historia de la Gran Muralla como símbolo de la relación de China con el mundo exterior.", leido:false, tengo:false, favorito:0 },
+  { id:33, titulo:"Orbital", autor:"Samantha Harvey", editorial:"", lista:"", orden:"", tematica:"Espacio", referencia:"Un día en la vida de seis astronautas en la ISS; ganadora del Booker 2024.", leido:false, tengo:false, favorito:0 },
+  { id:34, titulo:"Corazón tan blanco", autor:"Javier Marías", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"1", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Un intérprete indaga en los silencios y secretos de su entorno familiar.", leido:false, tengo:false, favorito:0 },
+  { id:35, titulo:"Crematorio", autor:"Rafael Chirbes", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"2", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Corrupción urbanística y decadencia moral en la Costa del Sol.", leido:false, tengo:false, favorito:0 },
+  { id:36, titulo:"El cuarto de atrás", autor:"Carmen Martín Gaite", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"3", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Diálogo nocturno entre memoria, franquismo y ficción.", leido:false, tengo:false, favorito:0 },
+  { id:37, titulo:"Las personas del verbo", autor:"Jaime Gil de Biedma", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"4", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Poesía completa del gran lírico de la Generación del 50.", leido:false, tengo:false, favorito:0 },
+  { id:38, titulo:"Anatomía de un instante", autor:"Javier Cercas", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"5", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Ensayo narrativo sobre el 23-F y sus tres gestos de resistencia.", leido:false, tengo:false, favorito:0 },
+  { id:39, titulo:"Soldados de Salamina", autor:"Javier Cercas", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"6", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Investigación sobre un fusilamiento fallido en la Guerra Civil.", leido:false, tengo:false, favorito:0 },
+  { id:40, titulo:"El jinete polaco", autor:"Antonio Muñoz Molina", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"7", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Memoria y amor a través de un pueblo andaluz durante el siglo XX.", leido:false, tengo:false, favorito:0 },
+  { id:41, titulo:"La verdad sobre el caso Savolta", autor:"Eduardo Mendoza", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"8", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Intriga anarquista y policial en la Barcelona de principios del siglo XX.", leido:false, tengo:false, favorito:0 },
+  { id:42, titulo:"Claros del bosque", autor:"María Zambrano", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"9", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Ensayo filosófico-poético sobre el exilio y la razón poética.", leido:false, tengo:false, favorito:0 },
+  { id:43, titulo:"Lectura fácil", autor:"Cristina Morales", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"10", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Cuatro mujeres con discapacidad intelectual narran su vida en un piso tutelado.", leido:false, tengo:false, favorito:0 },
+  { id:44, titulo:"El infinito en un junco", autor:"Irene Vallejo", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"11", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Ensayo sobre la historia del libro en el mundo antiguo.", leido:false, tengo:false, favorito:0 },
+  { id:45, titulo:"Vendrán más años malos y nos harán más ciegos", autor:"Rafael Sánchez Ferlosio", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"12", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Artículos y ensayos sobre la degradación del lenguaje político.", leido:false, tengo:false, favorito:0 },
+  { id:46, titulo:"Tu rostro mañana", autor:"Javier Marías", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"13", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Trilogía sobre espionaje, traición y la interpretación de las personas.", leido:false, tengo:false, favorito:0 },
+  { id:47, titulo:"Los santos inocentes", autor:"Miguel Delibes", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"14", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Vida de una familia de jornaleros bajo el yugo del señorito.", leido:false, tengo:false, favorito:0 },
+  { id:48, titulo:"Patria", autor:"Fernando Aramburu", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"15", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Dos familias vascas enfrentadas por el terrorismo de ETA.", leido:false, tengo:false, favorito:0 },
+  { id:49, titulo:"Olvidado rey Gudú", autor:"Ana María Matute", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"16", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Novela de fantasía medieval sobre el poder, el deseo y la crueldad.", leido:false, tengo:false, favorito:0 },
+  { id:50, titulo:"La ciudad de los prodigios", autor:"Eduardo Mendoza", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"17", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Ascenso social de un emigrante en la Barcelona de las dos exposiciones universales.", leido:false, tengo:false, favorito:0 },
+  { id:51, titulo:"Mortal y rosa", autor:"Francisco Umbral", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"18", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Elegía por la muerte de un hijo; cumbre del duelo en español.", leido:false, tengo:false, favorito:0 },
+  { id:52, titulo:"El día del Watusi", autor:"Francisco Casavella", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"19", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Trilogía sobre la Barcelona del tardofranquismo, entre bajos fondos y contracultura.", leido:false, tengo:false, favorito:0 },
+  { id:53, titulo:"Nubosidad variable", autor:"Carmen Martín Gaite", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"20", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Amistad femenina y reencuentro a través de un diario compartido.", leido:false, tengo:false, favorito:0 },
+  { id:54, titulo:"En la orilla", autor:"Rafael Chirbes", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"21", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Crisis inmobiliaria y ruina moral en un pueblo de la costa mediterránea.", leido:false, tengo:false, favorito:0 },
+  { id:55, titulo:"Los girasoles ciegos", autor:"Alberto Méndez", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"22", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Cuatro relatos sobre los vencidos de la Guerra Civil y la posguerra.", leido:false, tengo:false, favorito:0 },
+  { id:56, titulo:"La mala costumbre", autor:"Alana S. Portero", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"23", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Novela de iniciación sobre una adolescente trans en el Madrid de los 90.", leido:false, tengo:false, favorito:0 },
+  { id:57, titulo:"El otoño de las rosas", autor:"Francisco Brines", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"24", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Poemario sobre el paso del tiempo, la vejez y el deseo.", leido:false, tengo:false, favorito:0 },
+  { id:58, titulo:"Juegos de la edad tardía", autor:"Luis Landero", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"25", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Un hombre gris se inventa una vida heroica; comedia sobre la ficción y el fracaso.", leido:false, tengo:false, favorito:0 },
+  { id:59, titulo:"Romanticismo", autor:"Manuel Longares", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"26", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Retrato coral del franquismo desde la vida cotidiana de sus personajes.", leido:false, tengo:false, favorito:0 },
+  { id:60, titulo:"Mater Dolorosa", autor:"José Álvarez Junco", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"27", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Ensayo histórico sobre el nacionalismo español y sus mitos.", leido:false, tengo:false, favorito:0 },
+  { id:61, titulo:"Bartleby y compañía", autor:"Enrique Vila-Matas", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"28", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Notas a pie de página sobre los escritores que dejaron de escribir.", leido:false, tengo:false, favorito:0 },
+  { id:62, titulo:"Un amor", autor:"Sara Mesa", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"29", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Una mujer se instala en un pueblo aislado y se enreda en una relación tóxica.", leido:false, tengo:false, favorito:0 },
+  { id:63, titulo:"El temps de les cireres", autor:"Montserrat Roig", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"30", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Regreso de una mujer a la Barcelona de la posguerra tras años de exilio.", leido:false, tengo:false, favorito:0 },
+  { id:64, titulo:"Todas las almas", autor:"Javier Marías", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"31", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Un profesor español narra su paso por Oxford y sus amores fugaces.", leido:false, tengo:false, favorito:0 },
+  { id:65, titulo:"Historias de las dos Españas", autor:"Santos Julià", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"32", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Ensayo sobre la fractura ideológica que ha marcado la España contemporánea.", leido:false, tengo:false, favorito:0 },
+  { id:66, titulo:"Galíndez", autor:"Manuel Vázquez Montalbán", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"33", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Investigación ficcionada sobre la desaparición de un líder vasco exiliado en EE.UU.", leido:false, tengo:false, favorito:0 },
+  { id:67, titulo:"El cuento de nunca acabar", autor:"Carmen Martín Gaite", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"34", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Ensayo sobre el arte de contar y la tradición oral.", leido:false, tengo:false, favorito:0 },
+  { id:68, titulo:"Obabakoak", autor:"Bernardo Atxaga", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"35", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Relatos entrelazados ambientados en un pueblo vasco imaginario.", leido:false, tengo:false, favorito:0 },
+  { id:69, titulo:"La Edad de Plata", autor:"José-Carlos Mainer", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"36", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Panorama de la cultura española entre 1902 y 1939.", leido:false, tengo:false, favorito:0 },
+  { id:70, titulo:"La lluvia amarilla", autor:"Julio Llamazares", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"37", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Monólogo del último habitante de un pueblo abandonado del Pirineo leonés.", leido:false, tengo:false, favorito:0 },
+  { id:71, titulo:"Usos amorosos de la postguerra española", autor:"Carmen Martín Gaite", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"38", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Ensayo sobre el noviazgo y los roles de género en la España de los 40.", leido:false, tengo:false, favorito:0 },
+  { id:72, titulo:"Habitaciones separadas", autor:"Luis García Montero", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"39", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Poemario intimista sobre el amor cotidiano y la vida compartida.", leido:false, tengo:false, favorito:0 },
+  { id:73, titulo:"Las Armas y las Letras", autor:"Andrés Trapiello", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"40", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Historia de los escritores españoles durante la Guerra Civil, desde ambos bandos.", leido:false, tengo:false, favorito:0 },
+  { id:74, titulo:"Camí de sirga", autor:"Jesús Moncada", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"41", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Voces corales narran la vida de un pueblo del Ebro condenado a desaparecer.", leido:false, tengo:false, favorito:0 },
+  { id:75, titulo:"Arrugas", autor:"Paco Roca", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"42", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Novela gráfica sobre la vejez y el alzhéimer en una residencia.", leido:false, tengo:false, favorito:0 },
+  { id:76, titulo:"Un día volveré", autor:"Juan Marsé", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"43", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Un antiguo boxeador y contrabandista regresa a un barrio marcado por la posguerra.", leido:false, tengo:false, favorito:0 },
+  { id:77, titulo:"El corazón helado", autor:"Almudena Grandes", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"44", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Saga familiar que cruza la Guerra Civil, el exilio y sus secretos.", leido:false, tengo:false, favorito:0 },
+  { id:78, titulo:"Rabos de lagartija", autor:"Juan Marsé", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"45", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Infancia y clandestinidad en la Barcelona de posguerra, narradas por un feto.", leido:false, tengo:false, favorito:0 },
+  { id:79, titulo:"Antagonía", autor:"Luis Goytisolo", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"46", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Tetralogía sobre la formación intelectual y política de un joven burgués catalán.", leido:false, tengo:false, favorito:0 },
+  { id:80, titulo:"La escala de los mapas", autor:"Belén Gopegui", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"47", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Un hombre decide desaparecer de la vida de los demás; novela sobre la identidad.", leido:false, tengo:false, favorito:0 },
+  { id:81, titulo:"El entusiasmo", autor:"Remedios Zafra", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"48", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Ensayo sobre la precariedad y la autoexplotación en el capitalismo cultural.", leido:false, tengo:false, favorito:0 },
+  { id:82, titulo:"Herrumbrosas lanzas", autor:"Juan Benet", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"49", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Novela extensa y experimental sobre la Guerra Civil en la región mítica de Región.", leido:false, tengo:false, favorito:0 },
+  { id:83, titulo:"Fragmentos de un libro futuro", autor:"José Ángel Valente", editorial:"", lista:"Babelia · 50 mejores libros de los últimos 50 años (El País)", orden:"50", tematica:"Literatura española contemporánea (mejores últimos 50 años)", referencia:"Últimos poemas y prosas del poeta, publicados póstumamente.", leido:false, tengo:false, favorito:0 },
+  { id:84, titulo:"El amor en los tiempos del cólera", autor:"Gabriel García Márquez", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"1", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un amor que espera más de cincuenta años para consumarse en el Caribe colombiano.", leido:false, tengo:false, favorito:0 },
+  { id:85, titulo:"La fiesta del Chivo", autor:"Mario Vargas Llosa", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"2", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Los últimos días de la dictadura de Trujillo en República Dominicana.", leido:false, tengo:false, favorito:0 },
+  { id:86, titulo:"Los detectives salvajes", autor:"Roberto Bolaño", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"3", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Dos poetas 'real visceralistas' recorren el mundo buscando a una poeta desaparecida.", leido:false, tengo:false, favorito:0 },
+  { id:87, titulo:"2666", autor:"Roberto Bolaño", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"4", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Novela-río sobre los feminicidios de Ciudad Juárez y un escritor alemán enigmático.", leido:false, tengo:false, favorito:0 },
+  { id:88, titulo:"Noticias del imperio", autor:"Fernando del Paso", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"5", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Voz de Carlota de Bélgica narrando el imperio de Maximiliano en México.", leido:false, tengo:false, favorito:0 },
+  { id:89, titulo:"Santa Evita", autor:"Tomás Eloy Martínez", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"8", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Peripecias del cadáver embalsamado de Eva Perón.", leido:false, tengo:false, favorito:0 },
+  { id:90, titulo:"Mañana en la batalla piensa en mí", autor:"Javier Marías", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"9", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un hombre queda atrapado tras la muerte repentina de una mujer casada la noche que se conocen.", leido:false, tengo:false, favorito:0 },
+  { id:91, titulo:"El desbarrancadero", autor:"Fernando Vallejo", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"10", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un hombre acompaña a su hermano moribundo de sida en Medellín, con rabia y ternura.", leido:false, tengo:false, favorito:0 },
+  { id:92, titulo:"La virgen de los sicarios", autor:"Fernando Vallejo", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"11", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un escritor regresa a Medellín y se enamora de un joven sicario.", leido:false, tengo:false, favorito:0 },
+  { id:93, titulo:"El entenado", autor:"Juan José Saer", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"12", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un grumete es capturado por una tribu indígena caníbal en el Río de la Plata colonial.", leido:false, tengo:false, favorito:0 },
+  { id:94, titulo:"Estrella distante", autor:"Roberto Bolaño", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"14", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Retrato de un poeta-aviador que se convierte en torturador durante la dictadura chilena.", leido:false, tengo:false, favorito:0 },
+  { id:95, titulo:"Paisajes después de la batalla", autor:"Juan Goytisolo", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"15", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Novela fragmentaria sobre identidad, exilio y choque de culturas en París.", leido:false, tengo:false, favorito:0 },
+  { id:96, titulo:"El testigo", autor:"Juan Villoro", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"18", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un exiliado mexicano regresa a su país y confronta la memoria y el poder.", leido:false, tengo:false, favorito:0 },
+  { id:97, titulo:"Salón de belleza", autor:"Mario Bellatín", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"19", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un peluquero convierte su salón en refugio de enfermos terminales durante una epidemia.", leido:false, tengo:false, favorito:0 },
+  { id:98, titulo:"Cuando ya no importe", autor:"Juan Carlos Onetti", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"20", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Diario de un hombre que se retira a una vieja casa a esperar la muerte.", leido:false, tengo:false, favorito:0 },
+  { id:99, titulo:"La tejedora de coronas", autor:"Germán Espinosa", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"21", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Una mujer atraviesa siglos de historia americana, de la Conquista a la Independencia.", leido:false, tengo:false, favorito:0 },
+  { id:100, titulo:"El paraíso en la otra esquina", autor:"Mario Vargas Llosa", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"22", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Vidas entrelazadas de Flora Tristán y su nieto Paul Gauguin, entre la utopía social y el arte.", leido:false, tengo:false, favorito:0 },
+  { id:101, titulo:"Cae la noche tropical", autor:"Manuel Puig", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"23", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Dos hermanas ancianas chismorrean en Río de Janeiro sobre los vecinos y el pasado.", leido:false, tengo:false, favorito:0 },
+  { id:102, titulo:"Doctor Pasavento", autor:"Enrique Vila-Matas", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"24", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un escritor busca desaparecer por completo, siguiendo el rastro de otros que lo lograron.", leido:false, tengo:false, favorito:0 },
+  { id:103, titulo:"Empresas y tribulaciones de Maqroll el Gaviero", autor:"Álvaro Mutis", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"26", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Aventuras de un marino errante y soñador por rutas y puertos imaginarios.", leido:false, tengo:false, favorito:0 },
+  { id:104, titulo:"El invierno en Lisboa", autor:"Antonio Muñoz Molina", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"27", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un pianista de jazz se enamora de una mujer fugitiva en un ambiente de misterio y bares nocturnos.", leido:false, tengo:false, favorito:0 },
+  { id:105, titulo:"Verdes valles, colinas rojas", autor:"Ramiro Pinilla", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"28", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Trilogía sobre un pueblo vasco a través de generaciones, guerra y posguerra.", leido:false, tengo:false, favorito:0 },
+  { id:106, titulo:"Mal de amores", autor:"Ángeles Mastretta", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"29", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Una mujer se debate entre el amor y la Revolución mexicana.", leido:false, tengo:false, favorito:0 },
+  { id:107, titulo:"Donde las mujeres", autor:"Álvaro Pombo", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"30", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Reflexión sobre el deseo y las relaciones entre hombres y mujeres.", leido:false, tengo:false, favorito:0 },
+  { id:108, titulo:"El pasado", autor:"Alan Pauls", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"31", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Una ruptura amorosa se convierte en obsesión durante más de una década.", leido:false, tengo:false, favorito:0 },
+  { id:109, titulo:"El rastro", autor:"Jorge Gómez Jiménez", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"32", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:110, titulo:"Santo oficio de la memoria", autor:"Mempo Giardinelli", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"33", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Saga de una familia de inmigrantes italianos en Argentina a través del siglo XX.", leido:false, tengo:false, favorito:0 },
+  { id:111, titulo:"Los años con Laura Díaz", autor:"Carlos Fuentes", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"34", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Vida de una mujer que atraviesa el siglo XX mexicano, del porfiriato a la modernidad.", leido:false, tengo:false, favorito:0 },
+  { id:112, titulo:"Plenilunio", autor:"Antonio Muñoz Molina", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"35", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un policía investiga el asesinato de una niña en una ciudad española.", leido:false, tengo:false, favorito:0 },
+  { id:113, titulo:"Cartas cruzadas", autor:"Darío Jaramillo", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"37", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Novela epistolar sobre una generación colombiana marcada por la droga y la violencia.", leido:false, tengo:false, favorito:0 },
+  { id:114, titulo:"La casa del padre", autor:"Justo Navarro", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"38", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:115, titulo:"La visita en el tiempo", autor:"Arturo Uslar Pietri", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"39", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Novela histórica sobre Lope de Aguirre y la fiebre de El Dorado.", leido:false, tengo:false, favorito:0 },
+  { id:116, titulo:"La historia de Horacio", autor:"Tomás González", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"40", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:117, titulo:"La grande", autor:"Juan José Saer", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"41", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Última novela de Saer; regreso de un ingeniero a su pueblo natal en Argentina.", leido:false, tengo:false, favorito:0 },
+  { id:118, titulo:"El arte de la fuga", autor:"Sergio Pitol", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"42", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Ensayos y memorias literarias que mezclan crítica, viaje y autobiografía.", leido:false, tengo:false, favorito:0 },
+  { id:119, titulo:"La velocidad de la luz", autor:"Javier Cercas", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"43", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Amistad entre un escritor español y un veterano de Vietnam marcado por una masacre.", leido:false, tengo:false, favorito:0 },
+  { id:120, titulo:"La gesta del marrano", autor:"Marco Aguinis", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"45", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un judío converso enfrenta la Inquisición en la América colonial.", leido:false, tengo:false, favorito:0 },
+  { id:121, titulo:"Un viejo que leía novelas de amor", autor:"Luis Sepúlveda", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"46", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un anciano en la selva amazónica caza a un jaguar y reflexiona sobre la naturaleza.", leido:false, tengo:false, favorito:0 },
+  { id:122, titulo:"Plata quemada", autor:"Ricardo Piglia", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"47", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Basada en un hecho real: un atraco y la huida de los ladrones en Montevideo.", leido:false, tengo:false, favorito:0 },
+  { id:123, titulo:"El vuelo de la reina", autor:"Tomás Eloy Martínez", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"48", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un periodista veterano se obsesiona con una joven fotógrafa.", leido:false, tengo:false, favorito:0 },
+  { id:124, titulo:"Diablo guardián", autor:"Xavier Velasco", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"49", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Una joven mexicana huye a Nueva York y se reinventa entre la fiesta y el delito.", leido:false, tengo:false, favorito:0 },
+  { id:125, titulo:"Igur Neblí", autor:"Miquel de Palol", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"50", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Novela extensa de ciencia ficción y fantasía del autor catalán Miquel de Palol.", leido:false, tengo:false, favorito:0 },
+  { id:126, titulo:"La nieve del almirante", autor:"Álvaro Mutis", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"51", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Primera novela de Maqroll el Gaviero; diario de un viaje fluvial hacia un aserradero fantasma.", leido:false, tengo:false, favorito:0 },
+  { id:127, titulo:"Vigilia del almirante", autor:"Augusto Roa Bastos", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"52", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Recreación imaginativa de los diarios y pensamientos de Cristóbal Colón.", leido:false, tengo:false, favorito:0 },
+  { id:128, titulo:"Un campeón desparejo", autor:"Adolfo Bioy Casares", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"53", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Relatos del maestro argentino del fantástico y la ironía.", leido:false, tengo:false, favorito:0 },
+  { id:129, titulo:"Los pichiciegos", autor:"Fogwill", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"54", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un grupo de soldados desertores sobrevive escondido durante la guerra de las Malvinas.", leido:false, tengo:false, favorito:0 },
+  { id:130, titulo:"La burla del tiempo", autor:"Mauricio Electorat", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"55", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:131, titulo:"Una novela china", autor:"César Aira", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"56", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Relato breve y disparatado del prolífico César Aira, ambientado en China.", leido:false, tengo:false, favorito:0 },
+  { id:132, titulo:"El inútil de la familia", autor:"Jorge Edwards", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"57", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Retrato del tío bohemio y fracasado del autor, entre Chile y la bohemia europea.", leido:false, tengo:false, favorito:0 },
+  { id:133, titulo:"Lumperica", autor:"Diamela Eltit", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"58", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Novela experimental chilena sobre una mendiga bajo un farol, escrita durante la dictadura de Pinochet.", leido:false, tengo:false, favorito:0 },
+  { id:134, titulo:"La otra mano de Lepanto", autor:"Carmen Boullosa", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"59", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Novela histórica ambientada tras la batalla de Lepanto.", leido:false, tengo:false, favorito:0 },
+  { id:135, titulo:"En estado de memoria", autor:"Tununa Mercado", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"60", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Memoria del exilio argentino tras la dictadura, entre lo íntimo y lo político.", leido:false, tengo:false, favorito:0 },
+  { id:136, titulo:"Veinte años y un día", autor:"Jorge Semprún", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"61", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Una fiesta campestre en la España de los 50 revela las heridas de la Guerra Civil.", leido:false, tengo:false, favorito:0 },
+  { id:137, titulo:"Ladrón de lunas", autor:"Isaac Montero", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"62", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:138, titulo:"La cuadratura del círculo", autor:"Álvaro Pombo", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"63", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:139, titulo:"No me esperen en abril", autor:"Alfredo Bryce Echenique", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"64", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Comedia sentimental sobre la burguesía limeña de los años 50 y 60.", leido:false, tengo:false, favorito:0 },
+  { id:140, titulo:"Luna caliente", autor:"Mempo Giardinelli", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"65", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Thriller erótico sobre un abogado que mata al padre de una adolescente seductora.", leido:false, tengo:false, favorito:0 },
+  { id:141, titulo:"Una sombra ya pronto serás", autor:"Osvaldo Soriano", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"66", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un hombre sin rumbo recorre la pampa argentina en plena crisis económica.", leido:false, tengo:false, favorito:0 },
+  { id:142, titulo:"El cuarto mundo", autor:"Diamela Eltit", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"67", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Novela experimental sobre gemelos y la familia como microcosmos de poder.", leido:false, tengo:false, favorito:0 },
+  { id:143, titulo:"La silla del águila", autor:"Carlos Fuentes", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"68", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Novela epistolar y política sobre la sucesión presidencial en México.", leido:false, tengo:false, favorito:0 },
+  { id:144, titulo:"Temblor", autor:"Rosa Montero", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"69", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Una mujer despierta con la vida cambiada tras un accidente; reflexión sobre poder y género.", leido:false, tengo:false, favorito:0 },
+  { id:145, titulo:"Historia del silencio", autor:"Pedro Zarraluki", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"70", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:146, titulo:"Los fantasmas", autor:"César Aira", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"71", tematica:"Novela en español (100 mejores según especialistas)", referencia:"En una fiesta en una obra en construcción, fantasmas conviven con los vivos en Buenos Aires.", leido:false, tengo:false, favorito:0 },
+  { id:147, titulo:"Angosta", autor:"Héctor Abad Faciolince", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"72", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Ciudad colombiana dividida en castas sociales; alegoría sobre desigualdad y violencia.", leido:false, tengo:false, favorito:0 },
+  { id:148, titulo:"La muerte como efecto secundario", autor:"Ana María Shua", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"73", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un hijo cuida de su padre moribundo y tirano en Buenos Aires.", leido:false, tengo:false, favorito:0 },
+  { id:149, titulo:"La orilla oscura", autor:"José María Merino", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"74", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un profesor investiga la desaparición de un colega obsesionado con lo fantástico.", leido:false, tengo:false, favorito:0 },
+  { id:150, titulo:"La vida exagerada de Martín Romaña", autor:"Alfredo Bryce Echenique", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"75", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un joven peruano vive con desmesura sus años de estudiante en el París de los 70.", leido:false, tengo:false, favorito:0 },
+  { id:151, titulo:"Sin remedio", autor:"Antonio Caballero", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"76", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un joven bogotano se hunde en la autodestrucción, la crítica social y el humor negro.", leido:false, tengo:false, favorito:0 },
+  { id:152, titulo:"El tiempo de las mujeres", autor:"Ignacio Martínez de Pisón", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"77", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:153, titulo:"Al morir Don Quijote", autor:"Andrés Trapiello", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"78", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Continuación apócrifa que imagina la vida del hidalgo tras el final de la novela de Cervantes.", leido:false, tengo:false, favorito:0 },
+  { id:154, titulo:"Glosa", autor:"Juan José Saer", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"79", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Dos amigos caminan por Santa Fe comentando una fiesta a la que ninguno asistió.", leido:false, tengo:false, favorito:0 },
+  { id:155, titulo:"Crónica de un iniciado", autor:"Abelardo Castillo", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"80", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:156, titulo:"El traductor", autor:"Salvador Benesdra", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"81", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un traductor sindicalista se debate entre la ideología y el colapso personal en la Argentina de los 90.", leido:false, tengo:false, favorito:0 },
+  { id:157, titulo:"Cumpleaños", autor:"César Aira", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"82", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Reflexión personal del autor el día de su cumpleaños número cincuenta.", leido:false, tengo:false, favorito:0 },
+  { id:158, titulo:"La sexta lámpara", autor:"Pablo de Santis", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"83", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:159, titulo:"El embrujo de Shangai", autor:"Juan Marsé", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"84", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un adolescente escucha las fabulosas historias de un vecino tuberculoso en la Barcelona de posguerra.", leido:false, tengo:false, favorito:0 },
+  { id:160, titulo:"El maestro de esgrima", autor:"Arturo Pérez-Reverte", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"85", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un viejo maestro de esgrima se ve envuelto en una conspiración en el Madrid isabelino.", leido:false, tengo:false, favorito:0 },
+  { id:161, titulo:"Carreteras secundarias", autor:"Ignacio Martínez de Pisón", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"86", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un padre y su hijo recorren España en coche durante un verano de los 70.", leido:false, tengo:false, favorito:0 },
+  { id:162, titulo:"Rosario Tijeras", autor:"Jorge Franco", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"87", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Una joven sicaria de los cárteles de Medellín, narrada por el hombre que la ama.", leido:false, tengo:false, favorito:0 },
+  { id:163, titulo:"La sombra del viento", autor:"Carlos Ruiz Zafón", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"88", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un joven busca al autor de un misterioso libro en la Barcelona de posguerra.", leido:false, tengo:false, favorito:0 },
+  { id:164, titulo:"Camino a la perdición", autor:"Luis Mateo Díez", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"89", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:165, titulo:"A sus plantas rendido un león", autor:"Osvaldo Soriano", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"90", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un periodista argentino exiliado se ve envuelto en una guerra africana absurda.", leido:false, tengo:false, favorito:0 },
+  { id:166, titulo:"Memorias de mis putas tristes", autor:"Gabriel García Márquez", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"91", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un anciano periodista decide regalarse, en su 90 cumpleaños, una noche con una virgen adolescente.", leido:false, tengo:false, favorito:0 },
+  { id:167, titulo:"Autómata", autor:"Adolfo García Ortega", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"92", tematica:"Novela en español (100 mejores según especialistas)", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:168, titulo:"Del amor y otros demonios", autor:"Gabriel García Márquez", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"93", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Una niña mordida por un perro rabioso es sometida a un exorcismo en la Cartagena colonial.", leido:false, tengo:false, favorito:0 },
+  { id:169, titulo:"Ella cantaba boleros", autor:"Guillermo Cabrera Infante", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"94", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Fragmento habanero sobre la noche, la música y el erotismo, extraído de Tres tristes tigres.", leido:false, tengo:false, favorito:0 },
+  { id:170, titulo:"La novela luminosa", autor:"Mario Levrero", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"95", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Diario de un escritor que recibe una beca para terminar una novela que nunca termina.", leido:false, tengo:false, favorito:0 },
+  { id:171, titulo:"La guerra de Galio", autor:"Héctor Aguilar Camín", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"96", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Periodismo, poder y violencia política en el México de los años 70.", leido:false, tengo:false, favorito:0 },
+  { id:172, titulo:"Arráncame la vida", autor:"Ángeles Mastretta", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"97", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Una joven se casa con un político mexicano ambicioso y despiadado durante la posrevolución.", leido:false, tengo:false, favorito:0 },
+  { id:173, titulo:"Arturo, la estrella más brillante", autor:"Reinaldo Arenas", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"98", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un preso homosexual en la Cuba castrista se refugia en la fantasía y el deseo.", leido:false, tengo:false, favorito:0 },
+  { id:174, titulo:"La orilla africana", autor:"Rodrigo Rey Rosa", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"99", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Un joven europeo desaparece y es confundido en Tánger; enredo de identidades.", leido:false, tengo:false, favorito:0 },
+  { id:175, titulo:"Los vigilantes", autor:"Diamela Eltit", editorial:"", lista:"100 mejores novelas en español (encuesta a 81 especialistas)", orden:"100", tematica:"Novela en español (100 mejores según especialistas)", referencia:"Correspondencia entre una madre y un padre en disputa por la custodia de su hijo, bajo vigilancia estatal.", leido:false, tengo:false, favorito:0 },
+  { id:176, titulo:"Sexo en la Tierra", autor:"Jules Howard", editorial:"Blackie Books", lista:"10 libros de ciencia para el verano (OpenMind/BBVA)", orden:"1", tematica:"Divulgación científica · zoología", referencia:"Curiosidades y humor sobre la reproducción animal, de luciérnagas a dinosaurios.", leido:false, tengo:false, favorito:0 },
+  { id:177, titulo:"El jardín de la neurología", autor:"Javier de Felipe Oroquieta", editorial:"CSIC", lista:"10 libros de ciencia para el verano (OpenMind/BBVA)", orden:"2", tematica:"Divulgación científica · neurociencia", referencia:"Selección de imágenes históricas del cerebro humano; ciencia y estética unidas.", leido:false, tengo:false, favorito:0 },
+  { id:178, titulo:"La sexta extinción", autor:"Elizabeth Kolbert", editorial:"Crítica", lista:"10 libros de ciencia para el verano (OpenMind/BBVA)", orden:"3", tematica:"Divulgación científica · medio ambiente (Premio Pulitzer 2015)", referencia:"Crónica de la extinción masiva de especies causada por el ser humano (Pulitzer 2015).", leido:false, tengo:false, favorito:0 },
+  { id:179, titulo:"Los diez grandes inventos de la evolución", autor:"Nick Lane", editorial:"Ariel", lista:"10 libros de ciencia para el verano (OpenMind/BBVA)", orden:"4", tematica:"Divulgación científica · biología", referencia:"Diez innovaciones clave de la vida: el ADN, la fotosíntesis, el sexo, la muerte...", leido:false, tengo:false, favorito:0 },
+  { id:180, titulo:"Las máquinas bélicas de Leonardo", autor:"Enrique José Díaz León", editorial:"Guadalmazán", lista:"10 libros de ciencia para el verano (OpenMind/BBVA)", orden:"5", tematica:"Divulgación científica · historia de la tecnología", referencia:"Recorrido por la relación entre ciencia y guerra, de Leonardo da Vinci a los drones.", leido:false, tengo:false, favorito:0 },
+  { id:181, titulo:"El último alquimista en París", autor:"Lars Öhrström", editorial:"Crítica", lista:"10 libros de ciencia para el verano (OpenMind/BBVA)", orden:"6", tematica:"Divulgación científica · química", referencia:"22 episodios reales que unen química, historia y literatura, de Christie a la tabla periódica.", leido:false, tengo:false, favorito:0 },
+  { id:182, titulo:"Cómo acabará todo", autor:"Chris Impey", editorial:"Biblioteca Buridán", lista:"10 libros de ciencia para el verano (OpenMind/BBVA)", orden:"7", tematica:"Divulgación científica · astronomía", referencia:"Un repaso, con humor, a todos los finales posibles: el nuestro, el de la Tierra y el del universo.", leido:false, tengo:false, favorito:0 },
+  { id:183, titulo:"¿Qué pasaría si...?", autor:"Randall Munroe", editorial:"Aguilar", lista:"10 libros de ciencia para el verano (OpenMind/BBVA)", orden:"8", tematica:"Divulgación científica · física", referencia:"Respuestas científicas serias a preguntas absurdas de lectores del webcómic xkcd.", leido:false, tengo:false, favorito:0 },
+  { id:184, titulo:"El hombre que hablaba con los delfines", autor:"José Ramón Alonso Peña", editorial:"Guadalmazán", lista:"10 libros de ciencia para el verano (OpenMind/BBVA)", orden:"9", tematica:"Divulgación científica · neurociencia", referencia:"Historias curiosas sobre el cerebro y la neurociencia.", leido:false, tengo:false, favorito:0 },
+  { id:185, titulo:"El universo accidental", autor:"Alan Lightman", editorial:"Biblioteca Buridán", lista:"10 libros de ciencia para el verano (OpenMind/BBVA)", orden:"10", tematica:"Divulgación científica · física", referencia:"Siete ensayos sobre si el universo es un accidente entre infinitos universos posibles.", leido:false, tengo:false, favorito:0 },
+  { id:186, titulo:"Historia de Genji", autor:"Murasaki Shikibu", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"1", tematica:"Grandes novelas extensas / maximalistas", referencia:"Considerada la primera novela psicológica del mundo; vida cortesana en el Japón Heian.", leido:false, tengo:false, favorito:0 },
+  { id:187, titulo:"Jin Ping Mei (El erudito de las carcajadas)", autor:"Anónimo", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"2", tematica:"Grandes novelas extensas / maximalistas", referencia:"Novela erótica y social china del siglo XVI; sátira de la corrupción.", leido:false, tengo:false, favorito:0 },
+  { id:188, titulo:"Ulises", autor:"James Joyce", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"4", tematica:"Grandes novelas extensas / maximalistas", referencia:"Un día en Dublín narrado con virtuosismo formal; cumbre del modernismo.", leido:false, tengo:false, favorito:0 },
+  { id:189, titulo:"Paradiso", autor:"José Lezama Lima", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"5", tematica:"Grandes novelas extensas / maximalistas", referencia:"Novela barroca cubana sobre la formación de un poeta.", leido:false, tengo:false, favorito:0 },
+  { id:190, titulo:"El señor de los anillos", autor:"J. R. R. Tolkien", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"7", tematica:"Grandes novelas extensas / maximalistas", referencia:"La gran épica de fantasía sobre la lucha contra Sauron por la Tierra Media.", leido:false, tengo:false, favorito:0 },
+  { id:191, titulo:"La vida instrucciones de uso", autor:"Georges Perec", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"8", tematica:"Grandes novelas extensas / maximalistas", referencia:"Radiografía de un edificio parisino a través de sus vecinos y objetos.", leido:false, tengo:false, favorito:0 },
+  { id:192, titulo:"Los miserables", autor:"Víctor Hugo", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"9", tematica:"Grandes novelas extensas / maximalistas", referencia:"Redención de un expresidiario en la Francia del siglo XIX.", leido:false, tengo:false, favorito:0 },
+  { id:193, titulo:"El conde de Montecristo", autor:"Alejandro Dumas", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"10", tematica:"Grandes novelas extensas / maximalistas", referencia:"Venganza y reinvención tras una traición e injusta condena.", leido:false, tengo:false, favorito:0 },
+  { id:194, titulo:"Guerra y paz", autor:"Lev Tolstói", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"11", tematica:"Grandes novelas extensas / maximalistas", referencia:"Epopeya sobre la invasión napoleónica de Rusia y varias familias aristocráticas.", leido:false, tengo:false, favorito:0 },
+  { id:195, titulo:"La montaña mágica", autor:"Thomas Mann", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"12", tematica:"Grandes novelas extensas / maximalistas", referencia:"Un joven queda recluido en un sanatorio suizo; novela de ideas sobre Europa antes de la Gran Guerra.", leido:false, tengo:false, favorito:0 },
+  { id:196, titulo:"Rayuela", autor:"Julio Cortázar", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"13", tematica:"Grandes novelas extensas / maximalistas", referencia:"Novela de estructura abierta sobre el amor y la búsqueda existencial en París y Buenos Aires.", leido:false, tengo:false, favorito:0 },
+  { id:197, titulo:"Q", autor:"Luther Blissett", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"14", tematica:"Grandes novelas extensas / maximalistas", referencia:"Novela histórica coral sobre las herejías y revueltas de la Reforma.", leido:false, tengo:false, favorito:0 },
+  { id:198, titulo:"Finnegans Wake", autor:"James Joyce", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"15", tematica:"Grandes novelas extensas / maximalistas", referencia:"Experimento radical con el lenguaje; sueño nocturno cíclico.", leido:false, tengo:false, favorito:0 },
+  { id:199, titulo:"A la búsqueda del tiempo perdido", autor:"Marcel Proust", editorial:"", lista:"8.000 literarios · grandes novelas maximalistas", orden:"3", tematica:"Grandes novelas extensas / maximalistas", referencia:"Memoria involuntaria y evocación de una vida a través de siete volúmenes.", leido:false, tengo:false, favorito:0 },
+  { id:200, titulo:"Dune", autor:"Frank Herbert", editorial:"", lista:"Ciencia ficción · Top 10 clásico", orden:"1", tematica:"Ciencia ficción clásica", referencia:"Intriga política, ecología y mesianismo en el planeta desértico Arrakis.", leido:false, tengo:false, favorito:0 },
+  { id:201, titulo:"La mano izquierda de la oscuridad", autor:"Ursula K. Le Guin", editorial:"", lista:"Ciencia ficción · Top 10 clásico", orden:"2", tematica:"Ciencia ficción clásica", referencia:"Un enviado humano convive con una especie sin género fijo en un planeta helado.", leido:false, tengo:false, favorito:0 },
+  { id:202, titulo:"El fin de la infancia", autor:"Arthur C. Clarke", editorial:"", lista:"Ciencia ficción · Top 10 clásico", orden:"3", tematica:"Ciencia ficción clásica", referencia:"Alienígenas benevolentes transforman a la humanidad hacia una evolución superior.", leido:false, tengo:false, favorito:0 },
+  { id:203, titulo:"La luna es una cruel amante", autor:"Robert A. Heinlein", editorial:"", lista:"Ciencia ficción · Top 10 clásico", orden:"4", tematica:"Ciencia ficción clásica", referencia:"Rebelión de una colonia lunar contra la Tierra.", leido:false, tengo:false, favorito:0 },
+  { id:204, titulo:"Forastero en tierra extraña", autor:"Robert A. Heinlein", editorial:"", lista:"Ciencia ficción · Top 10 clásico", orden:"5", tematica:"Ciencia ficción clásica", referencia:"Un humano criado por marcianos regresa a la Tierra y funda una nueva religión.", leido:false, tengo:false, favorito:0 },
+  { id:205, titulo:"La trilogía de la Fundación", autor:"Isaac Asimov", editorial:"", lista:"Ciencia ficción · Top 10 clásico", orden:"6", tematica:"Ciencia ficción clásica", referencia:"Un matemático prevé la caída de un imperio galáctico y siembra el germen de su renacer.", leido:false, tengo:false, favorito:0 },
+  { id:206, titulo:"Cántico por Leibowitz", autor:"Walter M. Miller Jr.", editorial:"", lista:"Ciencia ficción · Top 10 clásico", orden:"7", tematica:"Ciencia ficción clásica", referencia:"Monjes preservan el conocimiento científico tras un apocalipsis nuclear, a lo largo de siglos.", leido:false, tengo:false, favorito:0 },
+  { id:207, titulo:"Pórtico", autor:"Frederik Pohl", editorial:"", lista:"Ciencia ficción · Top 10 clásico", orden:"8", tematica:"Ciencia ficción clásica", referencia:"Exploradores humanos usan naves alienígenas de destino desconocido en busca de fortuna.", leido:false, tengo:false, favorito:0 },
+  { id:208, titulo:"Mundo anillo", autor:"Larry Niven", editorial:"", lista:"Ciencia ficción · Top 10 clásico", orden:"9", tematica:"Ciencia ficción clásica", referencia:"Expedición a una gigantesca estructura artificial en forma de anillo alrededor de una estrella.", leido:false, tengo:false, favorito:0 },
+  { id:209, titulo:"Las estrellas, mi destino", autor:"Alfred Bester", editorial:"", lista:"Ciencia ficción · Top 10 clásico", orden:"10", tematica:"Ciencia ficción clásica", referencia:"Un hombre busca venganza tras ser abandonado en el espacio; el teletransporte mueve la trama.", leido:false, tengo:false, favorito:0 },
+  { id:210, titulo:"Los cuatro jinetes del Apocalipsis", autor:"Vicente Blasco Ibáñez", editorial:"", lista:"Literatura de la Gran Guerra (orden cronológico)", orden:"1", tematica:"Memoria y narrativa de la Primera Guerra Mundial", referencia:"1916", leido:false, tengo:false, favorito:0 },
+  { id:211, titulo:"Tempestades de acero", autor:"Ernst Jünger", editorial:"", lista:"Literatura de la Gran Guerra (orden cronológico)", orden:"2", tematica:"Memoria y narrativa de la Primera Guerra Mundial", referencia:"1920", leido:false, tengo:false, favorito:0 },
+  { id:212, titulo:"Los siete pilares de la sabiduría", autor:"T. E. Lawrence", editorial:"", lista:"Literatura de la Gran Guerra (orden cronológico)", orden:"3", tematica:"Memoria y narrativa de la Primera Guerra Mundial", referencia:"1922", leido:false, tengo:false, favorito:0 },
+  { id:213, titulo:"Adiós a todo esto", autor:"Robert Graves", editorial:"", lista:"Literatura de la Gran Guerra (orden cronológico)", orden:"4", tematica:"Memoria y narrativa de la Primera Guerra Mundial", referencia:"1929", leido:false, tengo:false, favorito:0 },
+  { id:214, titulo:"El miedo", autor:"Gabriel Chevallier", editorial:"", lista:"Literatura de la Gran Guerra (orden cronológico)", orden:"5", tematica:"Memoria y narrativa de la Primera Guerra Mundial", referencia:"1930", leido:false, tengo:false, favorito:0 },
+  { id:215, titulo:"Johnny cogió su fusil", autor:"Dalton Trumbo", editorial:"", lista:"Literatura de la Gran Guerra (orden cronológico)", orden:"6", tematica:"Memoria y narrativa de la Primera Guerra Mundial", referencia:"1931", leido:false, tengo:false, favorito:0 },
+  { id:216, titulo:"Viaje al fin de la noche", autor:"Louis-Ferdinand Céline", editorial:"", lista:"Literatura de la Gran Guerra (orden cronológico)", orden:"7", tematica:"Memoria y narrativa de la Primera Guerra Mundial", referencia:"1932", leido:false, tengo:false, favorito:0 },
+  { id:217, titulo:"El mundo de ayer", autor:"Stefan Zweig", editorial:"", lista:"Literatura de la Gran Guerra (orden cronológico)", orden:"8", tematica:"Memoria y narrativa de la Primera Guerra Mundial", referencia:"1942", leido:false, tengo:false, favorito:0 },
+  { id:218, titulo:"La araña negra", autor:"Vicente Blasco Ibáñez", editorial:"Seix, Barcelona", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"1", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1892", leido:false, tengo:false, favorito:0 },
+  { id:219, titulo:"Arroz y tartana", autor:"Vicente Blasco Ibáñez", editorial:"Biblioteca de El Pueblo, Valencia", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"2", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1894", leido:false, tengo:false, favorito:0 },
+  { id:220, titulo:"Flor de mayo", autor:"Vicente Blasco Ibáñez", editorial:"Biblioteca de El Pueblo, Valencia", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"3", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1895", leido:false, tengo:false, favorito:0 },
+  { id:221, titulo:"La barraca", autor:"Vicente Blasco Ibáñez", editorial:"Folletín en El Pueblo", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"4", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1898", leido:false, tengo:false, favorito:0 },
+  { id:222, titulo:"Entre naranjos", autor:"Vicente Blasco Ibáñez", editorial:"Sempere, Valencia", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"5", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1900", leido:false, tengo:false, favorito:0 },
+  { id:223, titulo:"Sónnica la cortesana", autor:"Vicente Blasco Ibáñez", editorial:"Sempere, Valencia", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"6", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1901", leido:false, tengo:false, favorito:0 },
+  { id:224, titulo:"Cañas y barro", autor:"Vicente Blasco Ibáñez", editorial:"Sempere, Valencia", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"7", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1902", leido:false, tengo:false, favorito:0 },
+  { id:225, titulo:"La catedral", autor:"Vicente Blasco Ibáñez", editorial:"Sempere, Valencia", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"8", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1903", leido:false, tengo:false, favorito:0 },
+  { id:226, titulo:"Sangre y arena", autor:"Vicente Blasco Ibáñez", editorial:"Sempere", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"9", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1908", leido:false, tengo:false, favorito:0 },
+  { id:227, titulo:"Mare Nostrum", autor:"Vicente Blasco Ibáñez", editorial:"Prometeo, Valencia", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"11", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1918", leido:false, tengo:false, favorito:0 },
+  { id:228, titulo:"El papa del mar", autor:"Vicente Blasco Ibáñez", editorial:"Prometeo, Valencia", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"12", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1925", leido:false, tengo:false, favorito:0 },
+  { id:229, titulo:"A los pies de Venus: los Borgia", autor:"Vicente Blasco Ibáñez", editorial:"Prometeo, Valencia", lista:"Vicente Blasco Ibáñez · obra (orden cronológico de 1ª edición)", orden:"13", tematica:"Narrativa española · ciclo valenciano y novela histórica", referencia:"1926", leido:false, tengo:false, favorito:0 },
+  { id:230, titulo:"Nudos y cruces", autor:"Ian Rankin", editorial:"", lista:"", orden:"", tematica:"Novela negra británica", referencia:"Primera novela de la serie del inspector Rebus, en un Edimburgo sombrío.", leido:false, tengo:false, favorito:0 },
+  { id:231, titulo:"Todo lo que muere", autor:"John Connolly", editorial:"", lista:"", orden:"", tematica:"Novela negra estadounidense", referencia:"Primera entrega de Charlie Parker; un expolicía investiga crímenes con tintes sobrenaturales.", leido:false, tengo:false, favorito:0 },
+  { id:232, titulo:"El eco negro", autor:"Michael Connelly", editorial:"", lista:"", orden:"", tematica:"Novela negra estadounidense", referencia:"Primera novela de Harry Bosch; investiga la muerte de un compañero de Vietnam.", leido:false, tengo:false, favorito:0 },
+  { id:233, titulo:"Un trago antes de la guerra", autor:"Dennis Lehane", editorial:"", lista:"", orden:"", tematica:"Novela negra estadounidense", referencia:"Primera novela de la serie Kenzie & Gennaro, en los barrios más duros de Boston.", leido:false, tengo:false, favorito:0 },
+  { id:234, titulo:"Motivo de ruptura", autor:"Harlan Coben", editorial:"", lista:"", orden:"", tematica:"Novela negra estadounidense", referencia:"Primera novela de Myron Bolitar, agente deportivo metido a detective.", leido:false, tengo:false, favorito:0 },
+  { id:235, titulo:"La forma del agua", autor:"Andrea Camilleri", editorial:"", lista:"", orden:"", tematica:"Novela negra italiana", referencia:"1994", leido:false, tengo:false, favorito:0 },
+  { id:236, titulo:"Pietr el Letón", autor:"Georges Simenon", editorial:"", lista:"", orden:"", tematica:"Novela negra francesa", referencia:"Primera novela protagonizada por el comisario Maigret.", leido:false, tengo:false, favorito:0 },
+  { id:237, titulo:"El talento de Mr. Ripley (A pleno sol)", autor:"Patricia Highsmith", editorial:"", lista:"", orden:"", tematica:"Novela negra / psicológica", referencia:"Tom Ripley suplanta la identidad de un joven rico en Italia; primera de la saga.", leido:false, tengo:false, favorito:0 },
+  { id:238, titulo:"Violetas de marzo", autor:"Philip Kerr", editorial:"", lista:"", orden:"", tematica:"Novela negra histórica (Alemania nazi)", referencia:"Primera novela de Bernie Gunther, detective privado en el Berlín nazi de los años 30.", leido:false, tengo:false, favorito:0 },
+  { id:239, titulo:"Asesinos sin rostro", autor:"Henning Mankell", editorial:"", lista:"", orden:"", tematica:"Novela negra nórdica", referencia:"Primera novela de la serie Wallander; un doble asesinato en la Escania rural.", leido:false, tengo:false, favorito:0 },
+  { id:240, titulo:"Roseanna", autor:"Maj Sjöwall y Per Wahlöö", editorial:"", lista:"", orden:"", tematica:"Novela negra nórdica", referencia:"Primera novela de Martin Beck, origen de la novela negra sueca moderna.", leido:false, tengo:false, favorito:0 },
+  { id:241, titulo:"El misterio de Pont-Aven", autor:"Jean-Luc Bannalec", editorial:"", lista:"", orden:"", tematica:"Novela negra (Bretaña, Francia)", referencia:"Primera novela del comisario Dupin, ambientada en la Bretaña francesa.", leido:false, tengo:false, favorito:0 },
+  { id:242, titulo:"El guardián invisible", autor:"Dolores Redondo", editorial:"", lista:"", orden:"", tematica:"Novela negra española", referencia:"Primera parte de la trilogía del Baztán; crímenes rituales en el norte de Navarra.", leido:false, tengo:false, favorito:0 },
+  { id:243, titulo:"Ojos de agua", autor:"Domingo Villar", editorial:"", lista:"", orden:"", tematica:"Novela negra española (Galicia)", referencia:"Primera novela del inspector Leo Caldas, ambientada en la ría de Vigo.", leido:false, tengo:false, favorito:0 },
+  { id:244, titulo:"Total Khéops", autor:"Jean-Claude Izzo", editorial:"", lista:"", orden:"", tematica:"Novela negra francesa (Marsella)", referencia:"Primera novela de la trilogía de Marsella, con el policía Fabio Montale.", leido:false, tengo:false, favorito:0 },
+  { id:245, titulo:"El enigma de China", autor:"Qiu Xiaolong", editorial:"Tusquets", lista:"Sci-Fi · Serie inspector Chen (Cao)", orden:"4", tematica:"Novela policiaca china", referencia:"Chen investiga un caso en la China contemporánea del boom económico.", leido:false, tengo:false, favorito:0 },
+  { id:246, titulo:"El candor del padre Brown", autor:"G. K. Chesterton", editorial:"", lista:"", orden:"", tematica:"Novela policiaca clásica (edad de oro)", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:247, titulo:"El hombre hueco", autor:"John Dickson Carr", editorial:"", lista:"", orden:"", tematica:"Novela policiaca clásica (misterio de habitación cerrada)", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:248, titulo:"La hija del tiempo", autor:"Josephine Tey", editorial:"", lista:"", orden:"", tematica:"Novela policiaca clásica", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:249, titulo:"Los nueve sastres", autor:"Dorothy L. Sayers", editorial:"", lista:"", orden:"", tematica:"Novela policiaca clásica", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:250, titulo:"El caso Galton", autor:"Ross Macdonald", editorial:"", lista:"", orden:"", tematica:"Novela negra estadounidense", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:251, titulo:"La máscara de Dimitrios", autor:"Eric Ambler", editorial:"", lista:"", orden:"", tematica:"Novela de espionaje clásica", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:252, titulo:"El expediente Ipcress", autor:"Len Deighton", editorial:"", lista:"", orden:"", tematica:"Novela de espionaje clásica", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:253, titulo:"Diario del ladrón", autor:"Jean Genet", editorial:"", lista:"", orden:"", tematica:"Narrativa transgresora francesa", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:254, titulo:"El cielo protector", autor:"Paul Bowles", editorial:"", lista:"", orden:"", tematica:"Narrativa norteamericana (Tánger)", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:255, titulo:"El almuerzo desnudo", autor:"William S. Burroughs", editorial:"", lista:"", orden:"", tematica:"Narrativa beat / transgresora", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:256, titulo:"Ruido de fondo", autor:"Don DeLillo", editorial:"", lista:"", orden:"", tematica:"Narrativa norteamericana contemporánea", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:257, titulo:"Pastoral americana", autor:"Philip Roth", editorial:"", lista:"", orden:"", tematica:"Narrativa norteamericana contemporánea", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:258, titulo:"Una cuestión personal", autor:"Kenzaburo Oé", editorial:"", lista:"", orden:"", tematica:"Narrativa japonesa", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:259, titulo:"Pájaros de arena", autor:"Sebastian Faulks", editorial:"", lista:"", orden:"", tematica:"Narrativa británica", referencia:"Autor mencionado sin título concreto; se propone su obra más representativa", leido:false, tengo:false, favorito:0 },
+  { id:260, titulo:"La fortaleza asediada", autor:"Qian Zhongshu", editorial:"", lista:"China · Novela contemporánea", orden:"", tematica:"Novela china (clásico moderno, 1947)", referencia:"Clásico satírico chino moderno: el matrimonio como una fortaleza asediada.", leido:false, tengo:false, favorito:0 },
+  { id:261, titulo:"La señorita Smila y su especial percepción de la nieve", autor:"Peter Høeg", editorial:"", lista:"", orden:"", tematica:"Novela escandinava", referencia:"Una mujer groenlandesa investiga la muerte sospechosa de un niño en Copenhague.", leido:false, tengo:false, favorito:0 },
+  { id:262, titulo:"Novela once, obra dieciocho (Pudor y dignidad)", autor:"Dag Solstad", editorial:"", lista:"", orden:"", tematica:"Novela escandinava", referencia:"Un actor abandona su carrera y su vida para instalarse en la pasividad total.", leido:false, tengo:false, favorito:0 },
+  { id:263, titulo:"La casa del mirador ciego", autor:"Herbjørg Wassmo", editorial:"", lista:"", orden:"", tematica:"Novela escandinava", referencia:"Infancia marcada por el abuso en la Noruega rural de posguerra; primera de una trilogía.", leido:false, tengo:false, favorito:0 },
+  { id:264, titulo:"El festín de Babette", autor:"Isak Dinesen", editorial:"", lista:"", orden:"", tematica:"Novela escandinava", referencia:"Una cocinera francesa exiliada prepara un banquete que transforma a una comunidad puritana danesa.", leido:false, tengo:false, favorito:0 },
+  { id:265, titulo:"Juego y distracción", autor:"James Salter", editorial:"", lista:"", orden:"", tematica:"Narrativa norteamericana", referencia:"Relación amorosa entre un estudiante americano y una joven francesa; prosa muy sensorial.", leido:false, tengo:false, favorito:0 },
+  { id:266, titulo:"Los anillos de Saturno", autor:"W. G. Sebald", editorial:"", lista:"", orden:"", tematica:"Ensayo narrativo", referencia:"Ensayo-narrativo en forma de caminata por la costa de Suffolk, entre historia y melancolía.", leido:false, tengo:false, favorito:0 },
+  { id:267, titulo:"La enciclopedia de los muertos", autor:"Danilo Kiš", editorial:"", lista:"", orden:"", tematica:"Narrativa centroeuropea", referencia:"Relatos sobre la memoria, la muerte y la historia de Europa del Este.", leido:false, tengo:false, favorito:0 },
+  { id:268, titulo:"El hombre sin atributos", autor:"Robert Musil", editorial:"", lista:"", orden:"", tematica:"Clásico centroeuropeo", referencia:"Novela inacabada sobre la decadencia del Imperio austrohúngaro antes de la Gran Guerra.", leido:false, tengo:false, favorito:0 },
+  { id:269, titulo:"El palacio de los sueños", autor:"Ismail Kadaré", editorial:"", lista:"", orden:"", tematica:"Narrativa albanesa", referencia:"Distopía sobre un imperio que administra burocráticamente los sueños de sus súbditos.", leido:false, tengo:false, favorito:0 },
+  { id:270, titulo:"Calle de las tiendas oscuras", autor:"Patrick Modiano", editorial:"", lista:"", orden:"", tematica:"Narrativa francesa", referencia:"Un hombre amnésico investiga su propia identidad perdida en el París de posguerra.", leido:false, tengo:false, favorito:0 },
+  { id:271, titulo:"Las partículas elementales", autor:"Michel Houellebecq", editorial:"", lista:"", orden:"", tematica:"Narrativa francesa contemporánea", referencia:"Dos hermanastros representan dos formas opuestas de vivir el desencanto occidental.", leido:false, tengo:false, favorito:0 },
+  { id:272, titulo:"Los libros de Jacob", autor:"Olga Tokarczuk", editorial:"", lista:"", orden:"", tematica:"Narrativa polaca contemporánea", referencia:"Monumental novela histórica sobre el líder mesiánico Jacob Frank en el s. XVIII.", leido:false, tengo:false, favorito:0 },
+  { id:273, titulo:"La maravillosa vida breve de Óscar Wao", autor:"Junot Díaz", editorial:"", lista:"", orden:"", tematica:"Narrativa caribeña", referencia:"Vida de un joven dominicano-americano marcada por la maldición familiar y la dictadura de Trujillo.", leido:false, tengo:false, favorito:0 },
+  { id:274, titulo:"Todo fluye", autor:"Vasili Grossman", editorial:"", lista:"", orden:"", tematica:"Narrativa rusa", referencia:"Un hombre sale del Gulag y confronta la memoria del estalinismo y el hambre en Ucrania.", leido:false, tengo:false, favorito:0 },
+  { id:275, titulo:"El amante", autor:"Marguerite Duras", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"1", tematica:"Novela corta", referencia:"Amor prohibido entre una joven francesa y un hombre chino en la Indochina colonial.", leido:false, tengo:false, favorito:0 },
+  { id:276, titulo:"La abadía de Northanger", autor:"Jane Austen", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"2", tematica:"Novela corta", referencia:"Parodia de novela gótica sobre una joven aficionada a las novelas de terror.", leido:false, tengo:false, favorito:0 },
+  { id:277, titulo:"Noches blancas", autor:"Fiódor Dostoievski", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"3", tematica:"Novela corta", referencia:"Un soñador solitario se enamora en cuatro noches de San Petersburgo.", leido:false, tengo:false, favorito:0 },
+  { id:278, titulo:"El gran Gatsby", autor:"Francis Scott Fitzgerald", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"4", tematica:"Novela corta", referencia:"Amor, riqueza y desencanto en la era del jazz.", leido:false, tengo:false, favorito:0 },
+  { id:279, titulo:"Bartleby, el escribiente", autor:"Herman Melville", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"5", tematica:"Novela corta", referencia:"Un oficinista se niega a trabajar con un lacónico 'preferiría no hacerlo'.", leido:false, tengo:false, favorito:0 },
+  { id:280, titulo:"El baile", autor:"Irène Némirovsky", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"6", tematica:"Novela corta", referencia:"Una adolescente sabotea el gran baile de sus padres nuevos ricos.", leido:false, tengo:false, favorito:0 },
+  { id:281, titulo:"El coronel no tiene quien le escriba", autor:"Gabriel García Márquez", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"7", tematica:"Novela corta", referencia:"Un anciano espera cada viernes una pensión que nunca llega.", leido:false, tengo:false, favorito:0 },
+  { id:282, titulo:"El sueño eterno", autor:"Raymond Chandler", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"8", tematica:"Novela corta", referencia:"Primer caso del detective Philip Marlowe, entre chantajes y familias corruptas de Los Ángeles.", leido:false, tengo:false, favorito:0 },
+  { id:283, titulo:"Intimidad", autor:"Hanif Kureishi", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"9", tematica:"Novela corta", referencia:"Un hombre decide, en una sola noche, abandonar a su familia.", leido:false, tengo:false, favorito:0 },
+  { id:284, titulo:"El corazón de las tinieblas", autor:"Joseph Conrad", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"10", tematica:"Novela corta", referencia:"Viaje por el río Congo hacia la locura del coronel Kurtz.", leido:false, tengo:false, favorito:0 },
+  { id:285, titulo:"La metamorfosis", autor:"Franz Kafka", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"11", tematica:"Novela corta", referencia:"Gregor Samsa despierta convertido en un insecto.", leido:false, tengo:false, favorito:0 },
+  { id:286, titulo:"La perla", autor:"John Steinbeck", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"12", tematica:"Novela corta", referencia:"Un pescador encuentra una perla que trae desgracia a su familia.", leido:false, tengo:false, favorito:0 },
+  { id:287, titulo:"El extranjero", autor:"Albert Camus", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"13", tematica:"Novela corta", referencia:"Un hombre indiferente ante la vida y la muerte tras matar a un árabe en Argelia.", leido:false, tengo:false, favorito:0 },
+  { id:288, titulo:"El sabueso de los Baskerville", autor:"Arthur Conan Doyle", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"14", tematica:"Novela corta", referencia:"Sherlock Holmes investiga una maldición familiar en los páramos ingleses.", leido:false, tengo:false, favorito:0 },
+  { id:289, titulo:"La tormenta de nieve", autor:"Lev Tolstói", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"15", tematica:"Novela corta", referencia:"Un viajero se pierde en una tormenta de nieve rusa.", leido:false, tengo:false, favorito:0 },
+  { id:290, titulo:"El despertar", autor:"Kate Chopin", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"16", tematica:"Novela corta", referencia:"Una mujer despierta a su propio deseo de libertad en la Luisiana del s. XIX.", leido:false, tengo:false, favorito:0 },
+  { id:291, titulo:"Desayuno en Tiffany's", autor:"Truman Capote", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"17", tematica:"Novela corta", referencia:"Retrato de Holly Golightly, símbolo de la libertad y el desarraigo en Nueva York.", leido:false, tengo:false, favorito:0 },
+  { id:292, titulo:"Novela de ajedrez", autor:"Stefan Zweig", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"18", tematica:"Novela corta", referencia:"Duelo psicológico entre un campeón de ajedrez y un prisionero de la Gestapo.", leido:false, tengo:false, favorito:0 },
+  { id:293, titulo:"Rebelión en la granja", autor:"George Orwell", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"19", tematica:"Novela corta", referencia:"Fábula sobre unos animales que expulsan a su granjero y acaban repitiendo la tiranía.", leido:false, tengo:false, favorito:0 },
+  { id:294, titulo:"Alicia en el país de las maravillas", autor:"Lewis Carroll", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"20", tematica:"Novela corta", referencia:"Una niña cae por una madriguera a un mundo de lógica absurda.", leido:false, tengo:false, favorito:0 },
+  { id:295, titulo:"Cuento de Navidad", autor:"Charles Dickens", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"21", tematica:"Novela corta", referencia:"Scrooge es visitado por tres espíritus que le muestran su vida.", leido:false, tengo:false, favorito:0 },
+  { id:296, titulo:"Frankenstein", autor:"Mary Shelley", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"22", tematica:"Novela corta", referencia:"Un científico da vida a una criatura que acaba destruyéndolo.", leido:false, tengo:false, favorito:0 },
+  { id:297, titulo:"La estepa / En el barranco", autor:"Antón P. Chéjov", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"23", tematica:"Novela corta", referencia:"Relatos sobre la vida rural rusa, entre la belleza del paisaje y la mezquindad humana.", leido:false, tengo:false, favorito:0 },
+  { id:298, titulo:"Otra vuelta de tuerca", autor:"Henry James", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"24", tematica:"Novela corta", referencia:"Una institutriz cree que sus pupilos están poseídos por fantasmas.", leido:false, tengo:false, favorito:0 },
+  { id:299, titulo:"El Principito", autor:"Antoine de Saint-Exupéry", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"25", tematica:"Novela corta", referencia:"Un aviador perdido en el desierto conoce a un niño de otro planeta.", leido:false, tengo:false, favorito:0 },
+  { id:300, titulo:"Pedro Páramo", autor:"Juan Rulfo", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"26", tematica:"Novela corta", referencia:"Un hombre busca a su padre en un pueblo habitado solo por muertos.", leido:false, tengo:false, favorito:0 },
+  { id:301, titulo:"Aura", autor:"Carlos Fuentes", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"27", tematica:"Novela corta", referencia:"Un joven historiador queda atrapado en una casa habitada por dos mujeres, una de ellas eterna.", leido:false, tengo:false, favorito:0 },
+  { id:302, titulo:"El sentido de un final", autor:"Julian Barnes", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"28", tematica:"Novela corta", referencia:"Un hombre reconstruye, ya mayor, los recuerdos falseados de su juventud.", leido:false, tengo:false, favorito:0 },
+  { id:303, titulo:"El adversario", autor:"Emmanuel Carrère", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"29", tematica:"Novela corta", referencia:"Crónica de un hombre que fingió ser médico 18 años y mató a su familia.", leido:false, tengo:false, favorito:0 },
+  { id:304, titulo:"El extraño caso del Dr. Jekyll y Mr. Hyde", autor:"Robert Louis Stevenson", editorial:"", lista:"Las mejores novelas cortas de la historia (Librotea)", orden:"30", tematica:"Novela corta", referencia:"Un científico libera su lado oscuro mediante una poción.", leido:false, tengo:false, favorito:0 },
+  { id:305, titulo:"Anochecer", autor:"Isaac Asimov", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"1", tematica:"Relato · ciencia ficción", referencia:"1941", leido:false, tengo:false, favorito:0 },
+  { id:306, titulo:"Flores para Algernon", autor:"Daniel Keyes", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"2", tematica:"Relato · ciencia ficción", referencia:"1959", leido:false, tengo:false, favorito:0 },
+  { id:307, titulo:"La estrella", autor:"Arthur C. Clarke", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"3", tematica:"Relato · ciencia ficción", referencia:"1955", leido:false, tengo:false, favorito:0 },
+  { id:308, titulo:"Los nueve mil millones de nombres de Dios", autor:"Arthur C. Clarke", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"4", tematica:"Relato · ciencia ficción", referencia:"1953", leido:false, tengo:false, favorito:0 },
+  { id:309, titulo:"No tengo boca y debo gritar", autor:"Harlan Ellison", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"5", tematica:"Relato · ciencia ficción", referencia:"1967", leido:false, tengo:false, favorito:0 },
+  { id:310, titulo:"La última pregunta", autor:"Isaac Asimov", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"6", tematica:"Relato · ciencia ficción", referencia:"1956", leido:false, tengo:false, favorito:0 },
+  { id:311, titulo:"Una rosa para el eclesiastés", autor:"Roger Zelazny", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"7", tematica:"Relato · ciencia ficción", referencia:"1963", leido:false, tengo:false, favorito:0 },
+  { id:312, titulo:"Los osos descubren el fuego", autor:"Terry Bisson", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"8", tematica:"Relato · ciencia ficción", referencia:"1990", leido:false, tengo:false, favorito:0 },
+  { id:313, titulo:"¡Arrepiéntete, Arlequín! dijo el señor Tic Tac", autor:"Harlan Ellison", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"9", tematica:"Relato · ciencia ficción", referencia:"1965", leido:false, tengo:false, favorito:0 },
+  { id:314, titulo:"Los reyes de la arena", autor:"George R. R. Martin", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"10", tematica:"Relato · ciencia ficción", referencia:"1979", leido:false, tengo:false, favorito:0 },
+  { id:315, titulo:"El hombre del bicentenario", autor:"Isaac Asimov", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"11", tematica:"Relato · ciencia ficción", referencia:"1976", leido:false, tengo:false, favorito:0 },
+  { id:316, titulo:"Pulse enter", autor:"John Varley", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"12", tematica:"Relato · ciencia ficción", referencia:"1985", leido:false, tengo:false, favorito:0 },
+  { id:317, titulo:"La persistencia de la visión", autor:"John Varley", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"13", tematica:"Relato · ciencia ficción", referencia:"1978", leido:false, tengo:false, favorito:0 },
+  { id:318, titulo:"El día del perdón", autor:"Ursula K. Le Guin", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"14", tematica:"Relato · ciencia ficción", referencia:"1994", leido:false, tengo:false, favorito:0 },
+  { id:319, titulo:"Jeffty tiene cinco años", autor:"Harlan Ellison", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"15", tematica:"Relato · ciencia ficción", referencia:"1977", leido:false, tengo:false, favorito:0 },
+  { id:320, titulo:"Johnny Mnemónico", autor:"William Gibson", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"16", tematica:"Relato · ciencia ficción", referencia:"1981", leido:false, tengo:false, favorito:0 },
+  { id:321, titulo:"Sonata sin acompañamiento", autor:"Orson Scott Card", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"17", tematica:"Relato · ciencia ficción", referencia:"1979", leido:false, tengo:false, favorito:0 },
+  { id:322, titulo:"Rachel enamorada", autor:"Pat Murphy", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"18", tematica:"Relato · ciencia ficción", referencia:"1987", leido:false, tengo:false, favorito:0 },
+  { id:323, titulo:"Muerte en el Nilo", autor:"Connie Willis", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"19", tematica:"Relato · ciencia ficción", referencia:"1993", leido:false, tengo:false, favorito:0 },
+  { id:324, titulo:"Where Angels Fear to Tread", autor:"Allen Steele", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"20", tematica:"Relato · ciencia ficción", referencia:"1997", leido:false, tengo:false, favorito:0 },
+  { id:325, titulo:"Es una buena vida", autor:"Jerome Bixby", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"21", tematica:"Relato · ciencia ficción", referencia:"1953", leido:false, tengo:false, favorito:0 },
+  { id:326, titulo:"Un muchacho y su perro", autor:"Harlan Ellison", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"22", tematica:"Relato · ciencia ficción", referencia:"1969", leido:false, tengo:false, favorito:0 },
+  { id:327, titulo:"El hombre que vendió la Luna", autor:"Robert A. Heinlein", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"23", tematica:"Relato · ciencia ficción", referencia:"1950", leido:false, tengo:false, favorito:0 },
+  { id:328, titulo:"Odisea en Marte", autor:"Stanley G. Weinbaum", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"24", tematica:"Relato · ciencia ficción", referencia:"1934", leido:false, tengo:false, favorito:0 },
+  { id:329, titulo:"Las carreteras deben rodar", autor:"Robert A. Heinlein", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"25", tematica:"Relato · ciencia ficción", referencia:"1940", leido:false, tengo:false, favorito:0 },
+  { id:330, titulo:"La música de la sangre", autor:"Greg Bear", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"26", tematica:"Relato · ciencia ficción", referencia:"1983", leido:false, tengo:false, favorito:0 },
+  { id:331, titulo:"No hay mayor ciego...", autor:"Joe Haldeman", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"27", tematica:"Relato · ciencia ficción", referencia:"1994", leido:false, tengo:false, favorito:0 },
+  { id:332, titulo:"Tiernamente Fahrenheit", autor:"Alfred Bester", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"28", tematica:"Relato · ciencia ficción", referencia:"1954", leido:false, tengo:false, favorito:0 },
+  { id:333, titulo:"Dios microcósmico", autor:"Theodore Sturgeon", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"29", tematica:"Relato · ciencia ficción", referencia:"1941", leido:false, tengo:false, favorito:0 },
+  { id:334, titulo:"Los que se marchan de Omelas", autor:"Ursula K. Le Guin", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"30", tematica:"Relato · ciencia ficción", referencia:"1973", leido:false, tengo:false, favorito:0 },
+  { id:335, titulo:"Visitante del espacio", autor:"John W. Campbell", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"31", tematica:"Relato · ciencia ficción", referencia:"1938", leido:false, tengo:false, favorito:0 },
+  { id:336, titulo:"Cántico a Leibowitz", autor:"Walter M. Miller", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"32", tematica:"Relato · ciencia ficción", referencia:"1955", leido:false, tengo:false, favorito:0 },
+  { id:337, titulo:"La mariposa lunar", autor:"Jack Vance", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"33", tematica:"Relato · ciencia ficción", referencia:"1961", leido:false, tengo:false, favorito:0 },
+  { id:338, titulo:"El ruido de un trueno", autor:"Ray Bradbury", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"34", tematica:"Relato · ciencia ficción", referencia:"1952", leido:false, tengo:false, favorito:0 },
+  { id:339, titulo:"Las frías ecuaciones", autor:"Tom Godwin", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"35", tematica:"Relato · ciencia ficción", referencia:"1954", leido:false, tengo:false, favorito:0 },
+  { id:340, titulo:"El pájaro de la muerte", autor:"Harlan Ellison", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"36", tematica:"Relato · ciencia ficción", referencia:"1973", leido:false, tengo:false, favorito:0 },
+  { id:341, titulo:"Piensa como un dinosaurio", autor:"James Patrick Kelly", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"37", tematica:"Relato · ciencia ficción", referencia:"1995", leido:false, tengo:false, favorito:0 },
+  { id:342, titulo:"Incluso la reina", autor:"Connie Willis", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"38", tematica:"Relato · ciencia ficción", referencia:"1992", leido:false, tengo:false, favorito:0 },
+  { id:343, titulo:"Época dorada", autor:"C. L. Moore y Henry Kuttner", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"39", tematica:"Relato · ciencia ficción", referencia:"1946", leido:false, tengo:false, favorito:0 },
+  { id:344, titulo:"Podemos recordarlo para usted al por mayor", autor:"Philip K. Dick", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"40", tematica:"Relato · ciencia ficción", referencia:"1966", leido:false, tengo:false, favorito:0 },
+  { id:345, titulo:"Quemando cromo", autor:"William Gibson", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"41", tematica:"Relato · ciencia ficción", referencia:"1982", leido:false, tengo:false, favorito:0 },
+  { id:346, titulo:"El juego de Ender", autor:"Orson Scott Card", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"42", tematica:"Relato · ciencia ficción", referencia:"1977", leido:false, tengo:false, favorito:0 },
+  { id:347, titulo:"Todos vosotros, zombies...", autor:"Robert A. Heinlein", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"43", tematica:"Relato · ciencia ficción", referencia:"1959", leido:false, tengo:false, favorito:0 },
+  { id:348, titulo:"Vendrán lluvias suaves", autor:"Ray Bradbury", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"44", tematica:"Relato · ciencia ficción", referencia:"1950", leido:false, tengo:false, favorito:0 },
+  { id:349, titulo:"Houston, Houston, ¿me recibe?", autor:"James Tiptree Jr.", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"45", tematica:"Relato · ciencia ficción", referencia:"1976", leido:false, tengo:false, favorito:0 },
+  { id:350, titulo:"El regreso del verdugo", autor:"Roger Zelazny", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"46", tematica:"Relato · ciencia ficción", referencia:"1975", leido:false, tengo:false, favorito:0 },
+  { id:351, titulo:"El juego de la rata y el dragón", autor:"Cordwainer Smith", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"47", tematica:"Relato · ciencia ficción", referencia:"1955", leido:false, tengo:false, favorito:0 },
+  { id:352, titulo:"Robbie", autor:"Isaac Asimov", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"48", tematica:"Relato · ciencia ficción", referencia:"1940", leido:false, tengo:false, favorito:0 },
+  { id:353, titulo:"El último de los winnebago", autor:"Connie Willis", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"49", tematica:"Relato · ciencia ficción", referencia:"1988", leido:false, tengo:false, favorito:0 },
+  { id:354, titulo:"Por sus propios medios", autor:"Robert A. Heinlein", editorial:"", lista:"Los mejores cuentos de ciencia-ficción", orden:"50", tematica:"Relato · ciencia ficción", referencia:"1941", leido:false, tengo:false, favorito:0 },
+  { id:355, titulo:"Enoch Soams", autor:"Max Beerbohm", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"1", tematica:"Relato breve", referencia:"Un escritor mediocre vende su alma para ver, un siglo después, cómo lo recuerda la posteridad.", leido:false, tengo:false, favorito:0 },
+  { id:356, titulo:"Casa tomada", autor:"Julio Cortázar", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"2", tematica:"Relato breve", referencia:"Dos hermanos ven cómo su casa es invadida, habitación a habitación, por una presencia invisible.", leido:false, tengo:false, favorito:0 },
+  { id:357, titulo:"Macario", autor:"Juan Rulfo", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"3", tematica:"Relato breve", referencia:"Monólogo de un niño obsesionado con comer ranas y con el miedo al infierno.", leido:false, tengo:false, favorito:0 },
+  { id:358, titulo:"Las moscas", autor:"Horacio Quiroga", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"4", tematica:"Relato breve", referencia:"Un hombre agonizante es visitado, en su delirio, por moscas que representan a los vivos.", leido:false, tengo:false, favorito:0 },
+  { id:359, titulo:"Esa mujer", autor:"Rodolfo Walsh", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"5", tematica:"Relato breve", referencia:"Un periodista entrevista al general encargado de esconder el cadáver de Eva Perón.", leido:false, tengo:false, favorito:0 },
+  { id:360, titulo:"La casa inundada", autor:"Felisberto Hernández", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"6", tematica:"Relato breve", referencia:"Una anciana excéntrica vive feliz en una casa que ha inundado a propósito, en botes.", leido:false, tengo:false, favorito:0 },
+  { id:361, titulo:"Vivir para siempre", autor:"James George Frazer", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"7", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:362, titulo:"Regreso a Babilonia", autor:"Francis Scott Fitzgerald", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"8", tematica:"Relato breve", referencia:"Un hombre regresa al París de los años locos para recuperar la custodia de su hija.", leido:false, tengo:false, favorito:0 },
+  { id:363, titulo:"El dinosaurio", autor:"Augusto Monterroso", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"9", tematica:"Relato breve", referencia:"Microrrelato hiperbreve, uno de los más célebres en español, sobre algo que sigue allí al despertar.", leido:false, tengo:false, favorito:0 },
+  { id:364, titulo:"La barrica de amontillado", autor:"Edgar Allan Poe", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"10", tematica:"Relato breve", referencia:"Un hombre se venga de un rival emparedándolo vivo durante el carnaval, con macabra cortesía.", leido:false, tengo:false, favorito:0 },
+  { id:365, titulo:"Septiembre", autor:"Pilar Galán", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"11", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:366, titulo:"El nadador", autor:"John Cheever", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"12", tematica:"Relato breve", referencia:"Un hombre decide volver a casa nadando piscina tras piscina por los jardines de sus vecinos.", leido:false, tengo:false, favorito:0 },
+  { id:367, titulo:"El Aleph", autor:"Jorge Luis Borges", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"13", tematica:"Relato breve", referencia:"Un hombre descubre, en un sótano, un punto que contiene todos los lugares del universo.", leido:false, tengo:false, favorito:0 },
+  { id:368, titulo:"El cuentista", autor:"Saki", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"14", tematica:"Relato breve", referencia:"Un viajero improvisa para unos niños un cuento nada moralizante que fascina más que las historias edificantes.", leido:false, tengo:false, favorito:0 },
+  { id:369, titulo:"Ajedrez", autor:"Kjell Askildsen", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"15", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:370, titulo:"El gesto de la muerte", autor:"Jean Cocteau", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"16", tematica:"Relato breve", referencia:"Un hombre esquiva a la Muerte en Ispahán, sin saber que ella también estaba sorprendida de verlo allí.", leido:false, tengo:false, favorito:0 },
+  { id:371, titulo:"Los pocillos", autor:"Mario Benedetti", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"17", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:372, titulo:"La noche de los feos", autor:"Mario Benedetti", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"18", tematica:"Relato breve", referencia:"Dos personas desfiguradas se conocen y aprenden a mirarse con otros ojos.", leido:false, tengo:false, favorito:0 },
+  { id:373, titulo:"La compuerta número 12", autor:"Baldomero Lillo", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"19", tematica:"Relato breve", referencia:"Un niño es enviado a trabajar en una mina de carbón chilena, con consecuencias trágicas.", leido:false, tengo:false, favorito:0 },
+  { id:374, titulo:"Una muchacha que cae", autor:"Dino Buzzati", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"20", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:375, titulo:"Aceite de perro", autor:"Ambrose Bierce", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"21", tematica:"Relato breve", referencia:"Relato macabro sobre un negocio familiar de fabricar aceite a partir de perros... y algo más.", leido:false, tengo:false, favorito:0 },
+  { id:376, titulo:"El miedo", autor:"Ramón del Valle-Inclán", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"22", tematica:"Relato breve", referencia:"Relato de Jardín Umbrío sobre el terror y la superstición rural gallega.", leido:false, tengo:false, favorito:0 },
+  { id:377, titulo:"Los relojes", autor:"Ana María Matute", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"23", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:378, titulo:"El chiquitín", autor:"Luigi Malerba", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"24", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:379, titulo:"Nacido de hombre y mujer", autor:"Richard B. Matheson", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"25", tematica:"Relato breve", referencia:"Diario de una criatura deforme encerrada por sus propios padres en un sótano.", leido:false, tengo:false, favorito:0 },
+  { id:380, titulo:"El diario de Porfiria Bernal", autor:"Silvina Ocampo", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"26", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:381, titulo:"La tercera orilla del río", autor:"João Guimarães Rosa", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"27", tematica:"Relato breve", referencia:"Un padre se embarca en una canoa y no regresa jamás, viviendo para siempre entre dos orillas.", leido:false, tengo:false, favorito:0 },
+  { id:382, titulo:"El recado", autor:"Elena Poniatowska", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"28", tematica:"Relato breve", referencia:"Una mujer espera durante horas la visita de un hombre que ama, componiendo mentalmente una carta.", leido:false, tengo:false, favorito:0 },
+  { id:383, titulo:"El corazón delator", autor:"Edgar Allan Poe", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"29", tematica:"Relato breve", referencia:"Un asesino, atormentado por el latido del corazón de su víctima, se delata ante la policía.", leido:false, tengo:false, favorito:0 },
+  { id:384, titulo:"El río", autor:"Flannery O'Connor", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"30", tematica:"Relato breve", referencia:"Un niño desatendido busca en el bautismo de un río la salvación que no encuentra en casa.", leido:false, tengo:false, favorito:0 },
+  { id:385, titulo:"El pozo", autor:"Luis Mateo Díez", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"31", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:386, titulo:"Rock Springs", autor:"Richard Ford", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"32", tematica:"Relato breve", referencia:"Una familia huye en un coche robado por carreteras de Montana, al borde del colapso.", leido:false, tengo:false, favorito:0 },
+  { id:387, titulo:"Instrucciones-ejemplos sobre la forma de tener miedo", autor:"Julio Cortázar", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"33", tematica:"Relato breve", referencia:"Instrucciones absurdas y lúcidas sobre el miedo cotidiano, de Historias de cronopios y de famas.", leido:false, tengo:false, favorito:0 },
+  { id:388, titulo:"Ligeia", autor:"Edgar Allan Poe", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"34", tematica:"Relato breve", referencia:"Un hombre cree que el espíritu de su primera esposa posee el cuerpo de la segunda.", leido:false, tengo:false, favorito:0 },
+  { id:389, titulo:"Los gallinazos sin plumas", autor:"Julio Ramón Ribeyro", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"35", tematica:"Relato breve", referencia:"Dos niños recogen basura para alimentar a un cerdo, bajo la tiranía de su abuelo.", leido:false, tengo:false, favorito:0 },
+  { id:390, titulo:"La leche de la muerte", autor:"Marguerite Yourcenar", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"36", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:391, titulo:"El hombre a quien maté", autor:"Tim O'Brien", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"37", tematica:"Relato breve", referencia:"Un soldado en Vietnam reconstruye, con culpa, la vida imaginada del hombre al que mató.", leido:false, tengo:false, favorito:0 },
+  { id:392, titulo:"La noche boca arriba", autor:"Julio Cortázar", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"38", tematica:"Relato breve", referencia:"Un motorista accidentado sueña, entre delirios febriles, que es perseguido por aztecas en un sacrificio ritual.", leido:false, tengo:false, favorito:0 },
+  { id:393, titulo:"En memoria de Paulina", autor:"Adolfo Bioy Casares", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"39", tematica:"Relato breve", referencia:"Un hombre recuerda su amor de juventud tras descubrir que ella pudo haber muerto antes de lo que creía.", leido:false, tengo:false, favorito:0 },
+  { id:394, titulo:"Continuidad de los parques", autor:"Julio Cortázar", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"40", tematica:"Relato breve", referencia:"Un lector de una novela es, sin saberlo, la víctima de la trama que está leyendo.", leido:false, tengo:false, favorito:0 },
+  { id:395, titulo:"Mi hijo el asesino", autor:"Bernard Malamud", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"41", tematica:"Relato breve", referencia:"Un padre observa con angustia la creciente alienación de su hijo, sospechoso de un crimen.", leido:false, tengo:false, favorito:0 },
+  { id:396, titulo:"Mi asiento en el tranvía", autor:"Daniel Sueiro", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"42", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:397, titulo:"Bolsas", autor:"Raymond Carver", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"43", tematica:"Relato breve", referencia:"Un hombre en apuros económicos reflexiona sobre su vida mientras carga bolsas de la compra.", leido:false, tengo:false, favorito:0 },
+  { id:398, titulo:"El viejo en el puente", autor:"Ernest Hemingway", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"44", tematica:"Relato breve", referencia:"Un anciano, exhausto tras huir de la guerra civil española, se detiene junto a un puente y no puede seguir.", leido:false, tengo:false, favorito:0 },
+  { id:399, titulo:"Catedral", autor:"Raymond Carver", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"45", tematica:"Relato breve", referencia:"Un hombre ciego enseña a ver de otra manera a su anfitrión; minimalismo narrativo.", leido:false, tengo:false, favorito:0 },
+  { id:400, titulo:"Un hombre muerto a puntapiés", autor:"Pablo Palacio", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"46", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:401, titulo:"Un día resbaladizo", autor:"Carlos Castán", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"47", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:402, titulo:"¿Cuánta tierra necesita un hombre?", autor:"León Tolstói", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"48", tematica:"Relato breve", referencia:"Un campesino codicioso intenta abarcar toda la tierra que pueda recorrer en un día, con trágicas consecuencias.", leido:false, tengo:false, favorito:0 },
+  { id:403, titulo:"El dueño del canon", autor:"José Urriola", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"49", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:404, titulo:"Embargo", autor:"José Saramago", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"50", tematica:"Relato breve", referencia:"Un hombre queda literalmente pegado a su coche durante la crisis del petróleo.", leido:false, tengo:false, favorito:0 },
+  { id:405, titulo:"Tráeme tu amor", autor:"Charles Bukowski", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"51", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:406, titulo:"Una mujer amaestrada", autor:"Juan José Arreola", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"52", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:407, titulo:"Funes el memorioso", autor:"Jorge Luis Borges", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"53", tematica:"Relato breve", referencia:"Un joven uruguayo, tras un accidente, adquiere una memoria absoluta que le impide olvidar nada.", leido:false, tengo:false, favorito:0 },
+  { id:408, titulo:"La niña que no tuve", autor:"Rodrigo Rey Rosa", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"54", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:409, titulo:"Biografía de Tadeo Isidoro Cruz", autor:"Jorge Luis Borges", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"55", tematica:"Relato breve", referencia:"Un gaucho argentino comprende, en un instante de combate, el sentido último de su propio destino.", leido:false, tengo:false, favorito:0 },
+  { id:410, titulo:"Cordero asado", autor:"Roald Dahl", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"56", tematica:"Relato breve", referencia:"Una mujer mata a su marido con una pierna de cordero congelada y luego se la sirve a la policía.", leido:false, tengo:false, favorito:0 },
+  { id:411, titulo:"Bibelot", autor:"Félix J. Palma", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"57", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:412, titulo:"Los cantores rusos", autor:"Iván Turguénev", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"58", tematica:"Relato breve", referencia:"Dos cantantes populares compiten en una taberna rural rusa ante un público entregado.", leido:false, tengo:false, favorito:0 },
+  { id:413, titulo:"El otro hombre", autor:"Miguel Delibes", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"59", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:414, titulo:"¡Diles que no me maten!", autor:"Juan Rulfo", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"60", tematica:"Relato breve", referencia:"Un hombre suplica a su hijo que impida su fusilamiento por un crimen cometido décadas atrás.", leido:false, tengo:false, favorito:0 },
+  { id:415, titulo:"El estudiante", autor:"Antón Chéjov", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"61", tematica:"Relato breve", referencia:"Un joven seminarista, al contar la historia de la negación de Pedro, siente renacer su fe en la continuidad humana.", leido:false, tengo:false, favorito:0 },
+  { id:416, titulo:"Las ruinas circulares", autor:"Jorge Luis Borges", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"62", tematica:"Relato breve", referencia:"Un hombre sueña, noche tras noche, a otro hombre hasta darle vida real.", leido:false, tengo:false, favorito:0 },
+  { id:417, titulo:"Perdiendo velocidad", autor:"Samantha Schweblin", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"63", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:418, titulo:"El juego", autor:"Patricia Esteban Erlés", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"64", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:419, titulo:"La señorita Cora", autor:"Julio Cortázar", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"65", tematica:"Relato breve", referencia:"Un adolescente hospitalizado y su joven enfermera narran, en voces alternas, un vínculo ambiguo.", leido:false, tengo:false, favorito:0 },
+  { id:420, titulo:"Las actas del juicio", autor:"Ricardo Piglia", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"66", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:421, titulo:"El muerto", autor:"Jorge Luis Borges", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"67", tematica:"Relato breve", referencia:"Un compadrito porteño asciende en una banda de contrabandistas del norte, sin saber que su destino ya está escrito.", leido:false, tengo:false, favorito:0 },
+  { id:422, titulo:"La casa Tellier", autor:"Guy de Maupassant", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"68", tematica:"Relato breve", referencia:"Las prostitutas de un burdel normando cierran por un día para asistir a una primera comunión.", leido:false, tengo:false, favorito:0 },
+  { id:423, titulo:"Noli me tangere", autor:"Pilar Adón", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"69", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:424, titulo:"El jorobadito", autor:"Roberto Arlt", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"70", tematica:"Relato breve", referencia:"Un hombre se obsesiona con un jorobado hasta cometer un crimen absurdo y gratuito.", leido:false, tengo:false, favorito:0 },
+  { id:425, titulo:"Aquí empieza nuestra historia", autor:"Tobias Wolff", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"71", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:426, titulo:"Las lunas de Júpiter", autor:"Alice Munro", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"72", tematica:"Relato breve", referencia:"Una mujer visita a su padre moribundo mientras reflexiona sobre las relaciones entre padres e hijas.", leido:false, tengo:false, favorito:0 },
+  { id:427, titulo:"La madre de Ernesto", autor:"Abelardo Castillo", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"73", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:428, titulo:"El cavaco", autor:"Miguel Torga", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"74", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:429, titulo:"El árbol", autor:"Slawomir Mrozek", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"75", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:430, titulo:"Los siete mensajeros", autor:"Dino Buzzati", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"76", tematica:"Relato breve", referencia:"Un príncipe se aleja cada vez más de su reino, comunicándose con él mediante mensajeros cada vez más lentos.", leido:false, tengo:false, favorito:0 },
+  { id:431, titulo:"La casa de muñecas", autor:"Katherine Mansfield", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"77", tematica:"Relato breve", referencia:"Dos niñas pobres son humilladas por no poder acercarse a la casa de muñecas de sus compañeras ricas.", leido:false, tengo:false, favorito:0 },
+  { id:432, titulo:"Los trenes de los muertos", autor:"Sara Gallardo", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"78", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:433, titulo:"La niña", autor:"Donald Barthelme", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"79", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:434, titulo:"El beso", autor:"Hjalmar Söderberg", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"80", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:435, titulo:"La princesa y el enano", autor:"Oscar Wilde", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"81", tematica:"Relato breve", referencia:"Un bufón enano descubre, al verse en un espejo, su propia fealdad, con consecuencias fatales.", leido:false, tengo:false, favorito:0 },
+  { id:436, titulo:"Un señor que poseía un caballo", autor:"Giorgio Manganelli", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"82", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:437, titulo:"Levitación", autor:"Joseph P. Brennan", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"83", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:438, titulo:"En Semana Santa", autor:"Emilia Pardo Bazán", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"84", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:439, titulo:"Young Sánchez", autor:"Ignacio Aldecoa", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"85", tematica:"Relato breve", referencia:"Un joven boxeador se juega su futuro en un combate decisivo, bajo la presión de su entorno.", leido:false, tengo:false, favorito:0 },
+  { id:440, titulo:"El lobo", autor:"Herman Hesse", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"86", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:441, titulo:"Mientras ella duerme", autor:"Norberto Luis Romero", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"87", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:442, titulo:"Mesa para dos", autor:"Lori Peikoff", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"88", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:443, titulo:"El hombre de la arena", autor:"E.T.A. Hoffmann", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"89", tematica:"Relato breve", referencia:"Un joven, obsesionado desde niño con la leyenda del Hombre de Arena, se enamora de un autómata.", leido:false, tengo:false, favorito:0 },
+  { id:444, titulo:"Consecuencias", autor:"Rosalba Campra", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"90", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:445, titulo:"El prodigioso miligramo", autor:"Juan José Arreola", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"91", tematica:"Relato breve", referencia:"Fábula sobre una sociedad de hormigas que rinde culto a un miligramo encontrado por azar.", leido:false, tengo:false, favorito:0 },
+  { id:446, titulo:"La mujer de otro", autor:"Abelardo Castillo", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"92", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:447, titulo:"Muchacha punk", autor:"Rodolfo Fogwill", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"93", tematica:"Relato breve", referencia:"Un hombre mayor se obsesiona con una joven punk en el Buenos Aires de los 80.", leido:false, tengo:false, favorito:0 },
+  { id:448, titulo:"El desaparecido", autor:"Julio Llamazares", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"94", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:449, titulo:"Caballo en el salitral", autor:"Antonio Di Benedetto", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"95", tematica:"Relato breve", referencia:"Un hombre atraviesa un paraje árido acompañado de su caballo, al límite de la resistencia física.", leido:false, tengo:false, favorito:0 },
+  { id:450, titulo:"Los largos años", autor:"Ray Bradbury", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"96", tematica:"Relato breve", referencia:"Un hombre exiliado en Marte construye autómatas de su familia perdida para no estar solo.", leido:false, tengo:false, favorito:0 },
+  { id:451, titulo:"El matadero", autor:"Esteban Echeverría", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"97", tematica:"Relato breve", referencia:"Alegoría sobre la violencia política argentina ambientada en un matadero durante el rosismo.", leido:false, tengo:false, favorito:0 },
+  { id:452, titulo:"Sopa de pescado", autor:"Francisco Rodríguez Criado", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"98", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:453, titulo:"Don Paciano", autor:"Ramón Pérez de Ayala", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"99", tematica:"Relato breve", referencia:"", leido:false, tengo:false, favorito:0 },
+  { id:454, titulo:"A la deriva", autor:"Horacio Quiroga", editorial:"", lista:"Los mejores 1001 cuentos literarios de la historia (narrativabreve.com)", orden:"100", tematica:"Relato breve", referencia:"Un hombre mordido por una serpiente venenosa rema río abajo intentando llegar a tiempo a un pueblo.", leido:false, tengo:false, favorito:0 },
+  { id:455, titulo:"El extraño caso del señor Valdemar", autor:"Edgar Allan Poe", editorial:"", lista:"", orden:"", tematica:"Relato de terror", referencia:"Un hombre es hipnotizado en el momento de morir, con resultados perturbadores.", leido:false, tengo:false, favorito:0 },
+  { id:456, titulo:"La muerta enamorada", autor:"Théophile Gautier", editorial:"", lista:"", orden:"", tematica:"Relato de terror", referencia:"Un sacerdote es seducido por el fantasma de una cortesana; relato gótico romántico.", leido:false, tengo:false, favorito:0 },
+  { id:457, titulo:"Un habitante de Carcosa", autor:"Ambrose Bierce", editorial:"", lista:"", orden:"", tematica:"Relato de terror", referencia:"Relato breve que inspiró el mito del Rey de Amarillo.", leido:false, tengo:false, favorito:0 },
+  { id:458, titulo:"La pata de mono", autor:"W. W. Jacobs", editorial:"", lista:"", orden:"", tematica:"Relato de terror", referencia:"Un talismán concede tres deseos con consecuencias terribles; clásico del terror inglés.", leido:false, tengo:false, favorito:0 },
+  { id:459, titulo:"La verdad acerca de Pyecraft", autor:"H. G. Wells", editorial:"", lista:"", orden:"", tematica:"Relato de terror", referencia:"Relato cómico-fantástico sobre un hombre que pierde peso de forma sobrenatural.", leido:false, tengo:false, favorito:0 },
+  { id:460, titulo:"Vinum Sabbati", autor:"Arthur Machen", editorial:"", lista:"", orden:"", tematica:"Relato de terror", referencia:"Relato de terror sobre brujería y aquelarres.", leido:false, tengo:false, favorito:0 },
+  { id:461, titulo:"El almohadón de plumas", autor:"Horacio Quiroga", editorial:"", lista:"", orden:"", tematica:"Relato de terror", referencia:"Una recién casada enferma misteriosamente; clásico del terror rioplatense.", leido:false, tengo:false, favorito:0 },
+  { id:462, titulo:"La decisión de Randolph Carter", autor:"H. P. Lovecraft", editorial:"", lista:"", orden:"", tematica:"Relato de terror", referencia:"Relato de horror cósmico ambientado en un cementerio.", leido:false, tengo:false, favorito:0 },
+  { id:463, titulo:"Catedral", autor:"Raymond Carver", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Un hombre ciego enseña a ver de otra manera a su anfitrión; minimalismo narrativo.", leido:false, tengo:false, favorito:0 },
+  { id:464, titulo:"Los muertos", autor:"James Joyce", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Relato final de Dublineses; una velada navideña desvela los fantasmas del pasado.", leido:false, tengo:false, favorito:0 },
+  { id:465, titulo:"La bestia en la jungla", autor:"Henry James", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Un hombre espera toda su vida un destino extraordinario que nunca llega.", leido:false, tengo:false, favorito:0 },
+  { id:466, titulo:"No oyes ladrar a los perros", autor:"Juan Rulfo", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Un padre carga a su hijo herido por la sierra; diálogo tenso entre ambos.", leido:false, tengo:false, favorito:0 },
+  { id:467, titulo:"Graffiti", autor:"Julio Cortázar", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Dos desconocidos se comunican mediante pintadas en una ciudad bajo represión.", leido:false, tengo:false, favorito:0 },
+  { id:468, titulo:"El miedo", autor:"Ramón del Valle-Inclán", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Relato de Jardín Umbrío sobre el terror y la superstición rural gallega.", leido:false, tengo:false, favorito:0 },
+  { id:469, titulo:"Deslumbramiento", autor:"Truman Capote", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Relato breve de Capote sobre la fascinación y el deslumbramiento.", leido:false, tengo:false, favorito:0 },
+  { id:470, titulo:"El espejo y la máscara", autor:"Jorge Luis Borges", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Un rey exige al poeta un poema cada vez más perfecto, con consecuencias fatales.", leido:false, tengo:false, favorito:0 },
+  { id:471, titulo:"El hombre que ríe", autor:"J. D. Salinger", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Un grupo de niños escucha las aventuras de un héroe enmascarado narradas por su monitor.", leido:false, tengo:false, favorito:0 },
+  { id:472, titulo:"Regreso a Babilonia", autor:"Francis Scott Fitzgerald", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Un hombre regresa al París de los años locos para recuperar la custodia de su hija.", leido:false, tengo:false, favorito:0 },
+  { id:473, titulo:"Problemas, problemas", autor:"Ingeborg Bachmann", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Relato sobre la fragilidad de la identidad femenina en la sociedad vienesa.", leido:false, tengo:false, favorito:0 },
+  { id:474, titulo:"La mosca", autor:"Katherine Mansfield", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Un jefe observa a una mosca luchar por sobrevivir en su tintero; metáfora del duelo.", leido:false, tengo:false, favorito:0 },
+  { id:475, titulo:"Campeón", autor:"Ring Lardner", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Retrato irónico de un boxeador brutal idolatrado por la prensa.", leido:false, tengo:false, favorito:0 },
+  { id:476, titulo:"El álbum", autor:"Medardo Fraile", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Relato breve de Medardo Fraile, maestro español del microrrelato costumbrista.", leido:false, tengo:false, favorito:0 },
+  { id:477, titulo:"La buena gente del campo", autor:"Flannery O'Connor", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Una joven intelectual y discapacitada es engañada por un vendedor de biblias; sátira sureña.", leido:false, tengo:false, favorito:0 },
+  { id:478, titulo:"En la bahía", autor:"Katherine Mansfield", editorial:"", lista:"", orden:"", tematica:"Relato breve", referencia:"Continuación de 'Preludio'; un día en la vida de una familia neozelandesa junto al mar.", leido:false, tengo:false, favorito:0 },
+  { id:479, titulo:"", autor:"Judith Butler", editorial:"", lista:"Pensament", orden:"", tematica:"Pensamiento contemporáneo", referencia:"Autor apuntado sin título concreto todavía — pendiente de elegir libro", leido:false, tengo:false, favorito:0 },
+  { id:480, titulo:"", autor:"Slavoj Žižek", editorial:"", lista:"Pensament", orden:"", tematica:"Pensamiento contemporáneo", referencia:"Autor apuntado sin título concreto todavía — pendiente de elegir libro", leido:false, tengo:false, favorito:0 },
+  { id:481, titulo:"", autor:"Byung-Chul Han", editorial:"", lista:"Pensament", orden:"", tematica:"Pensamiento contemporáneo", referencia:"Autor apuntado sin título concreto todavía — pendiente de elegir libro", leido:false, tengo:false, favorito:0 },
+  { id:482, titulo:"", autor:"Thomas Piketty", editorial:"", lista:"Pensament", orden:"", tematica:"Pensamiento contemporáneo", referencia:"Autor apuntado sin título concreto todavía — pendiente de elegir libro", leido:false, tengo:false, favorito:0 },
+  { id:483, titulo:"", autor:"Yuval Noah Harari", editorial:"", lista:"Pensament", orden:"", tematica:"Pensamiento contemporáneo", referencia:"Autor apuntado sin título concreto todavía — pendiente de elegir libro", leido:false, tengo:false, favorito:0 },
+  { id:484, titulo:"", autor:"Mark Fisher", editorial:"", lista:"Pensament", orden:"", tematica:"Pensamiento contemporáneo", referencia:"Autor apuntado sin título concreto todavía — pendiente de elegir libro", leido:false, tengo:false, favorito:0 },
+];
+
+let editingId = null;
+let nextId = 485;
+
+const $ = sel => document.querySelector(sel);
+const grid = $('#grid');
+const overlay = $('#overlay');
+const form = $('#bookForm');
+
+function escapeHtml(s){
+  if(s==null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function render(){
+  renderStats();
+  renderBreakdowns();
+  renderGrid();
+  renderListaFilterOptions();
+}
+
+function renderStats(){
+  const total = books.length;
+  const listas = new Set(books.map(b=>b.lista).filter(Boolean)).size;
+  const tematicas = new Set(books.map(b=>b.tematica).filter(Boolean)).size;
+  const autores = new Set(books.map(b=>b.autor).filter(Boolean)).size;
+  const leidos = books.filter(b=>b.leido).length;
+  const tengo = books.filter(b=>b.tengo).length;
+  $('#statsStrip').innerHTML = `
+    <div class="stat"><div class="num">${total}</div><div class="lbl">Libros en la pila</div></div>
+    <div class="stat"><div class="num">${listas}</div><div class="lbl">Listas de origen</div></div>
+    <div class="stat"><div class="num">${tematicas}</div><div class="lbl">Temáticas</div></div>
+    <div class="stat"><div class="num">${autores}</div><div class="lbl">Autores distintos</div></div>
+    <div class="stat"><div class="num">${leidos}</div><div class="lbl">Ya leídos</div></div>
+    <div class="stat"><div class="num">${tengo}</div><div class="lbl">Ya los tengo</div></div>
+  `;
+}
+
+function renderBreakdownBlock(container, field){
+  const counts = {};
+  books.forEach(b=>{
+    const v = (b[field]||'').trim();
+    if(!v) return;
+    counts[v] = (counts[v]||0)+1;
+  });
+  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(entries.length===0){
+    container.innerHTML = `<div class="empty-note">Todavía no hay datos suficientes.</div>`;
+    return;
+  }
+  const max = entries[0][1];
+  container.innerHTML = entries.map(([name,count])=>`
+    <div class="bar-row">
+      <div class="name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(count/max*100).toFixed(0)}%"></div></div>
+      <div class="count">${count}</div>
+    </div>
+  `).join('');
+}
+
+function renderBreakdowns(){
+  renderBreakdownBlock($('#breakdownLista'), 'lista');
+  renderBreakdownBlock($('#breakdownTematica'), 'tematica');
+}
+
+function renderListaFilterOptions(){
+  const sel = $('#listaFilter');
+  const current = sel.value;
+  const listas = [...new Set(books.map(b=>b.lista).filter(Boolean))].sort();
+  sel.innerHTML = `<option value="">Todas las listas</option>` + listas.map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+  sel.value = listas.includes(current) ? current : '';
+}
+
+function getFiltered(){
+  const q = $('#searchInput').value.trim().toLowerCase();
+  const listaFilter = $('#listaFilter').value;
+  let out = books.filter(b=>{
+    if(listaFilter && b.lista !== listaFilter) return false;
+    const leidoFilter = $('#leidoFilter').value;
+    if(leidoFilter === 'si' && !b.leido) return false;
+    if(leidoFilter === 'no' && b.leido) return false;
+    const tengoFilter = $('#tengoFilter').value;
+    if(tengoFilter === 'si' && !b.tengo) return false;
+    if(tengoFilter === 'no' && b.tengo) return false;
+    const favoritoFilter = $('#favoritoFilter').value;
+    if(favoritoFilter && (b.favorito||0) < Number(favoritoFilter)) return false;
+    if(!q) return true;
+    const estado = [b.leido ? 'leído leido' : 'no leído no leido pendiente', b.tengo ? 'tengo' : 'por comprar comprar'].join(' ');
+    const hay = [b.titulo,b.autor,b.editorial,b.tematica,b.lista,b.referencia,estado].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+  const sortBy = $('#sortSelect').value;
+  out.sort((a,b)=>{
+    if(sortBy==='favorito'){
+      if((b.favorito||0) !== (a.favorito||0)) return (b.favorito||0) - (a.favorito||0);
+      return (a.titulo||'').localeCompare(b.titulo||'');
+    }
+    if(sortBy==='orden'){
+      const ao = a.orden==null || a.orden==='' ? Infinity : Number(a.orden);
+      const bo = b.orden==null || b.orden==='' ? Infinity : Number(b.orden);
+      if(ao!==bo) return ao-bo;
+      return (a.titulo||'').localeCompare(b.titulo||'');
+    }
+    if(sortBy==='reciente') return b.id - a.id;
+    return (a[sortBy]||'').localeCompare(b[sortBy]||'');
+  });
+  return out;
+}
+
+function renderGrid(){
+  const list = getFiltered();
+  $('#countLine').textContent = `${list.length} de ${books.length} libro${books.length===1?'':'s'}`;
+
+  if(books.length===0){
+    grid.innerHTML = '';
+    grid.insertAdjacentHTML('afterend', '');
+    grid.style.display='none';
+    if(!document.getElementById('emptyState')){
+      const div = document.createElement('div');
+      div.id='emptyState';
+      div.className='empty-state';
+      div.innerHTML = `<h3>Tu pila de lectura está vacía</h3><p>Añade el primer libro que quieres leer: título, autor, editorial, y si viene de alguna lista de "mejores libros", su posición y una breve nota.</p><button class="btn primary" onclick="openAdd()">+ Añadir libro</button>`;
+      grid.parentNode.insertBefore(div, grid.nextSibling);
+    }
+    return;
+  } else {
+    grid.style.display='grid';
+    const es = document.getElementById('emptyState');
+    if(es) es.remove();
+  }
+
+  if(list.length===0){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><h3>Sin resultados</h3><p>Prueba con otro término de búsqueda o quita el filtro de lista.</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(b=>`
+    <div class="card" onclick="openEdit(${b.id})">
+      ${b.favorito > 0 ? `<div class="fav-stars">${'★'.repeat(b.favorito)}</div>` : ''}
+      ${b.orden ? `<div class="ribbon">Nº ${escapeHtml(b.orden)}</div>` : ''}
+      ${b.lista ? `<div class="lista-tag">${escapeHtml(b.lista)}</div>` : ''}
+      <h2>${escapeHtml(b.titulo || 'Sin título')}</h2>
+      ${b.autor ? `<div class="autor">${escapeHtml(b.autor)}</div>` : ''}
+      ${b.editorial ? `<div class="editorial smallcaps">${escapeHtml(b.editorial)}</div>` : ''}
+      ${b.tematica ? `<div class="tematica">${escapeHtml(b.tematica)}</div>` : ''}
+      ${b.referencia ? `<div class="referencia">${escapeHtml(b.referencia)}</div>` : ''}
+      <div class="status-row">
+        <span class="status-badge leido ${b.leido ? 'on' : ''}">${b.leido ? 'Leído' : 'No leído'}</span>
+        <span class="status-badge tengo ${b.tengo ? 'on' : ''}">${b.tengo ? 'Tengo' : 'Por comprar'}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openAdd(){
+  editingId = null;
+  $('#modalTitle').textContent = 'Añadir libro';
+  $('#btnDelete').style.display='none';
+  form.reset();
+  setToggle($('#toggleLeido'), 'no');
+  setToggle($('#toggleTengo'), 'no');
+  currentFavorito = 0;
+  renderStarPicker();
+  overlay.classList.add('open');
+  $('#f_titulo').focus();
+}
+
+function openEdit(id){
+  const b = books.find(x=>x.id===id);
+  if(!b) return;
+  editingId = id;
+  $('#modalTitle').textContent = 'Editar libro';
+  $('#btnDelete').style.display='inline-block';
+  $('#f_titulo').value = b.titulo||'';
+  $('#f_autor').value = b.autor||'';
+  $('#f_editorial').value = b.editorial||'';
+  $('#f_lista').value = b.lista||'';
+  $('#f_orden').value = b.orden||'';
+  $('#f_tematica').value = b.tematica||'';
+  $('#f_referencia').value = b.referencia||'';
+  setToggle($('#toggleLeido'), b.leido ? 'si' : 'no');
+  setToggle($('#toggleTengo'), b.tengo ? 'si' : 'no');
+  currentFavorito = b.favorito || 0;
+  renderStarPicker();
+  overlay.classList.add('open');
+}
+
+function closeModal(){
+  overlay.classList.remove('open');
+  editingId = null;
+}
+
+form.addEventListener('submit', e=>{
+  e.preventDefault();
+  const data = {
+    titulo: $('#f_titulo').value.trim(),
+    autor: $('#f_autor').value.trim(),
+    editorial: $('#f_editorial').value.trim(),
+    lista: $('#f_lista').value.trim(),
+    orden: $('#f_orden').value.trim(),
+    tematica: $('#f_tematica').value.trim(),
+    referencia: $('#f_referencia').value.trim(),
+    leido: getToggle($('#toggleLeido')) === 'si',
+    tengo: getToggle($('#toggleTengo')) === 'si',
+    favorito: currentFavorito,
+  };
+  if(!data.titulo){ $('#f_titulo').focus(); return; }
+  if(editingId){
+    const b = books.find(x=>x.id===editingId);
+    Object.assign(b, data);
+  } else {
+    books.push({ id: nextId++, ...data });
+  }
+  closeModal();
+  render();
+});
+
+$('#btnDelete').addEventListener('click', ()=>{
+  if(editingId && confirm('¿Eliminar este libro de la pila de lectura?')){
+    books = books.filter(x=>x.id!==editingId);
+    closeModal();
+    render();
+  }
+});
+
+$('#btnCancel').addEventListener('click', closeModal);
+overlay.addEventListener('click', e=>{ if(e.target===overlay) closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && overlay.classList.contains('open')) closeModal(); });
+
+$('#btnAdd').addEventListener('click', openAdd);
+$('#searchInput').addEventListener('input', renderGrid);
+$('#sortSelect').addEventListener('change', renderGrid);
+$('#listaFilter').addEventListener('change', renderGrid);
+$('#leidoFilter').addEventListener('change', renderGrid);
+$('#tengoFilter').addEventListener('change', renderGrid);
+$('#favoritoFilter').addEventListener('change', renderGrid);
+
+let currentFavorito = 0;
+function renderStarPicker(){
+  document.querySelectorAll('#starPicker .star-btn').forEach(btn=>{
+    btn.classList.toggle('filled', Number(btn.dataset.value) <= currentFavorito);
+  });
+}
+$('#starPicker').addEventListener('click', e=>{
+  const btn = e.target.closest('.star-btn');
+  if(!btn) return;
+  const val = Number(btn.dataset.value);
+  currentFavorito = (currentFavorito === val) ? val - 1 : val;
+  renderStarPicker();
+});
+
+function setToggle(groupEl, value){
+  groupEl.querySelectorAll('.toggle-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.value === value);
+  });
+}
+function getToggle(groupEl){
+  const active = groupEl.querySelector('.toggle-btn.active');
+  return active ? active.dataset.value : 'no';
+}
+document.querySelectorAll('.toggle-group').forEach(group=>{
+  group.addEventListener('click', e=>{
+    const btn = e.target.closest('.toggle-btn');
+    if(!btn) return;
+    setToggle(group, btn.dataset.value);
+  });
+});
+
+$('#btnDownload').addEventListener('click', ()=>{
+  const rows = books.map(b=>({
+    'ID': b.id,
+    'Título': b.titulo,
+    'Autor': b.autor,
+    'Editorial': b.editorial,
+    'Lista de origen': b.lista,
+    'Orden': b.orden,
+    'Temática': b.tematica,
+    'Referencia': b.referencia,
+    'Leído': b.leido ? 'Sí' : 'No',
+    'Tengo': b.tengo ? 'Sí' : 'No',
+    'Favorito': b.favorito ? '★'.repeat(b.favorito) : '',
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:38},{wch:24},{wch:22},{wch:30},{wch:8},{wch:20},{wch:40},{wch:8},{wch:8},{wch:8}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Por leer');
+  XLSX.writeFile(wb, 'BBL_PL.xlsx');
+});
+
+render();
+renderStarPicker();
+</script>
+
+</body>
+</html>
