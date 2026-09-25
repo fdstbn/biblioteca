@@ -545,7 +545,7 @@ footer{
 <section class="section">
   <div class="section-head">
     <h2><span class="tag">01</span> Buscador de fichas</h2>
-    <div class="section-note">Por título, autor, tema (género) y país de origen. Haz clic en cualquier ficha para editarla o eliminarla.</div>
+    <div class="section-note">Por título, autor, género, país, editorial, serie, idioma y palabras clave. Haz clic en cualquier ficha para editarla o eliminarla.</div>
   </div>
 
   <div class="search-panel">
@@ -565,6 +565,22 @@ footer{
       <div class="field">
         <label for="qPais">País</label>
         <select id="qPais"><option value="">Todos</option></select>
+      </div>
+      <div class="field">
+        <label for="qEditorial">Editorial</label>
+        <input id="qEditorial" type="text" placeholder="p. ej. Anagrama" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="qSerie">Serie</label>
+        <input id="qSerie" type="text" placeholder="p. ej. Andanzas" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="qIdioma">Idioma</label>
+        <select id="qIdioma"><option value="">Todos</option></select>
+      </div>
+      <div class="field">
+        <label for="qPalabrasClave">Palabras clave</label>
+        <input id="qPalabrasClave" type="text" placeholder="p. ej. geopolítica" autocomplete="off">
       </div>
       <div class="field">
         <label for="qEstado">Estado</label>
@@ -588,6 +604,7 @@ footer{
         <label for="qOrden">Ordenar por</label>
         <select id="qOrden">
           <option value="relevancia">Relevancia</option>
+          <option value="anadido-desc">Añadidos recientemente</option>
           <option value="titulo-asc">Título (A–Z)</option>
           <option value="titulo-desc">Título (Z–A)</option>
           <option value="autor-asc">Autor (A–Z)</option>
@@ -929,6 +946,10 @@ const qTitulo = document.getElementById('qTitulo');
 const qAutor = document.getElementById('qAutor');
 const qTema = document.getElementById('qTema');
 const qPais = document.getElementById('qPais');
+const qEditorial = document.getElementById('qEditorial');
+const qSerie = document.getElementById('qSerie');
+const qIdioma = document.getElementById('qIdioma');
+const qPalabrasClave = document.getElementById('qPalabrasClave');
 const qEstado = document.getElementById('qEstado');
 const qPlan = document.getElementById('qPlan');
 const qOrden = document.getElementById('qOrden');
@@ -939,15 +960,17 @@ const generoList = document.getElementById('generoList');
 const paisList = document.getElementById('paisList');
 
 function refreshSelectOptions(){
-  const temaSet = new Set(), paisSet = new Set();
-  RECORDS.forEach(r => { if(r.g) temaSet.add(r.g); if(r.p) paisSet.add(r.p); });
+  const temaSet = new Set(), paisSet = new Set(), idiomaSet = new Set();
+  RECORDS.forEach(r => { if(r.g) temaSet.add(r.g); if(r.p) paisSet.add(r.p); if(r.d) idiomaSet.add(r.d); });
 
-  const curTema = qTema.value, curPais = qPais.value;
+  const curTema = qTema.value, curPais = qPais.value, curIdioma = qIdioma.value;
   qTema.innerHTML = '<option value="">Todos</option>' +
     [...temaSet].sort((a,b)=>a.localeCompare(b,'es')).map(g=>`<option value="${g}">${g}</option>`).join('');
   qPais.innerHTML = '<option value="">Todos</option>' +
     [...paisSet].sort((a,b)=>a.localeCompare(b,'es')).map(p=>`<option value="${p}">${p}</option>`).join('');
-  qTema.value = curTema; qPais.value = curPais;
+  qIdioma.innerHTML = '<option value="">Todos</option>' +
+    [...idiomaSet].sort((a,b)=>a.localeCompare(b,'es')).map(d=>`<option value="${d}">${d}</option>`).join('');
+  qTema.value = curTema; qPais.value = curPais; qIdioma.value = curIdioma;
 
   generoList.innerHTML = [...temaSet].sort((a,b)=>a.localeCompare(b,'es')).map(g=>`<option value="${g}">`).join('');
   paisList.innerHTML = [...paisSet].sort((a,b)=>a.localeCompare(b,'es')).map(p=>`<option value="${p}">`).join('');
@@ -965,12 +988,20 @@ function matches(r){
   const a = norm(qAutor.value.trim());
   const tema = qTema.value;
   const pais = qPais.value;
+  const editorial = norm(qEditorial.value.trim());
+  const serie = norm(qSerie.value.trim());
+  const idioma = qIdioma.value;
+  const palabrasClave = norm(qPalabrasClave.value.trim());
   const estado = qEstado.value;
   const plan = qPlan.value;
   if(t && !norm(r.t).includes(t)) return false;
   if(a && !norm(r.a).includes(a)) return false;
   if(tema && r.g !== tema) return false;
   if(pais && r.p !== pais) return false;
+  if(editorial && !norm(r.e).includes(editorial)) return false;
+  if(serie && !norm(r.s).includes(serie)) return false;
+  if(idioma && r.d !== idioma) return false;
+  if(palabrasClave && !norm(r.k).includes(palabrasClave)) return false;
   if(estado === 'leido' && !(r.l===1 || r.l===3)) return false;
   if(estado === 'noleido' && r.l!==0) return false;
   if(plan !== '' && planStars(r.plan) !== parseInt(plan,10)) return false;
@@ -1024,6 +1055,7 @@ function sortRecords(list){
     if(field === 'anio'){ av = parseInt(a.c,10); bv = parseInt(b.c,10); av = isNaN(av)?-Infinity:av; bv = isNaN(bv)?-Infinity:bv; return sign * (av-bv); }
     if(field === 'valoracion'){ av = a.r||0; bv = b.r||0; return sign * (av-bv); }
     if(field === 'plan'){ av = planStars(a.plan); bv = planStars(b.plan); return sign * (av-bv); }
+    if(field === 'anadido'){ av = a.i||0; bv = b.i||0; return sign * (av-bv); }
     return 0;
   });
   return arr;
@@ -1050,11 +1082,11 @@ function renderAll(){
   renderResults();
 }
 
-[qTitulo, qAutor].forEach(el => el.addEventListener('input', () => { shown = PAGE; renderResults(); }));
-[qTema, qPais, qEstado, qPlan, qOrden].forEach(el => el.addEventListener('change', () => { shown = PAGE; renderResults(); }));
+[qTitulo, qAutor, qEditorial, qSerie, qPalabrasClave].forEach(el => el.addEventListener('input', () => { shown = PAGE; renderResults(); }));
+[qTema, qPais, qIdioma, qEstado, qPlan, qOrden].forEach(el => el.addEventListener('change', () => { shown = PAGE; renderResults(); }));
 loadMoreBtn.addEventListener('click', () => { shown += PAGE; renderResults(); });
 document.getElementById('clearBtn').addEventListener('click', () => {
-  qTitulo.value=''; qAutor.value=''; qTema.value=''; qPais.value=''; qEstado.value=''; qPlan.value=''; qOrden.value='relevancia';
+  qTitulo.value=''; qAutor.value=''; qTema.value=''; qPais.value=''; qEditorial.value=''; qSerie.value=''; qIdioma.value=''; qPalabrasClave.value=''; qEstado.value=''; qPlan.value=''; qOrden.value='relevancia';
   shown = PAGE; renderResults();
 });
 
